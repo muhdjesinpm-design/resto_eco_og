@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RestoOS — Kitchen KDS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#0a0a0a] text-[#f5f5f7] font-sans min-h-screen">
+
+  <!-- Auth Gate -->
+  <div id="auth-gate" class="max-w-sm mx-auto mt-32 bg-[#121212] border border-[#222] p-6 rounded">
+    <h2 class="text-sm font-bold uppercase tracking-widest text-[#c5a059] mb-4">Kitchen Staff Portal</h2>
+    <input id="email" type="email" placeholder="Staff Email" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-sm rounded mb-3 text-white focus:outline-none focus:border-[#c5a059]">
+    <input id="password" type="password" placeholder="Password" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-sm rounded mb-4 text-white focus:outline-none focus:border-[#c5a059]">
+    <button onclick="login()" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-2.5 rounded tracking-wider uppercase">Authenticate</button>
+  </div>
+
+  <!-- Protected KDS View -->
+  <div id="kds-app" class="hidden p-6 space-y-6">
+    <div class="flex justify-between items-center border-b border-[#222] pb-4">
+      <div class="flex items-center space-x-3">
+        <h1 class="text-base font-bold tracking-wider text-[#c5a059] uppercase">Kitchen Display System</h1>
+        <span class="bg-emerald-950/50 border border-emerald-900 text-emerald-400 text-[10px] font-mono px-2.5 py-1 rounded">LIVE SYNC ACTIVE</span>
+      </div>
+      <button onclick="openManageModal()" class="bg-[#c5a059] text-[#0a0a0a] text-xs font-bold font-mono px-4 py-2 rounded transition hover:bg-[#b08d48] uppercase tracking-wider">MANAGE</button>
+    </div>
+    <div id="orders-grid" class="grid grid-cols-4 gap-4">
+      <div class="bg-[#121212] border border-[#222] p-4 rounded min-h-[400px]">
+        <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase mb-3">New Orders</h3>
+        <div id="col-new" class="space-y-3"></div>
+      </div>
+      <div class="bg-[#121212] border border-[#222] p-4 rounded min-h-[400px]">
+        <h3 class="text-xs font-bold tracking-widest text-blue-400 uppercase mb-3">In Preparation</h3>
+        <div id="col-preparing" class="space-y-3"></div>
+      </div>
+      <div class="bg-[#121212] border border-[#222] p-4 rounded min-h-[400px]">
+        <h3 class="text-xs font-bold tracking-widest text-emerald-400 uppercase mb-3">Ready</h3>
+        <div id="col-ready" class="space-y-3"></div>
+      </div>
+      <div class="bg-[#121212] border border-[#222] p-4 rounded min-h-[400px]">
+        <h3 class="text-xs font-bold tracking-widest text-[#666] uppercase mb-3">Served</h3>
+        <div id="col-served" class="space-y-3 opacity-50"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Centralized Manage Modal (Products & Ingredients) -->
+  <div id="manage-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121212] border border-[#222] w-full max-w-2xl h-[560px] rounded-lg flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center border-b border-[#222] p-4 bg-[#161616]">
+        <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Kitchen Stock & Inventory Management</h3>
+        <button onclick="openManageModal()" class="text-[#888] hover:text-white">✕</button>
+      </div>
+      <!-- Sub-Navigation Bar inside Manage Window (No Numbers) -->
+      <div class="flex border-b border-[#222] bg-[#0e0e0e] px-4 py-2 space-x-2">
+        <button onclick="switchManageTab('products')" id="m-tab-products" class="px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]">Products / Menu Stock</button>
+        <button onclick="switchManageTab('ingredients')" id="m-tab-ingredients" class="px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Raw Ingredients</button>
+      </div>
+
+      <!-- TAB 1: PRODUCTS / MENU STOCK (Split Dashboard) -->
+      <div id="manage-content-products" class="flex flex-1 overflow-hidden">
+        <div id="stock-categories" class="w-48 bg-[#0e0e0e] border-r border-[#222] p-3 space-y-1 overflow-y-auto"></div>
+        <div id="stock-items-container" class="flex-1 p-4 space-y-3 overflow-y-auto bg-[#121212]"></div>
+      </div>
+
+      <!-- TAB 2: RAW INGREDIENTS -->
+      <div id="manage-content-ingredients" class="hidden flex-1 p-4 space-y-3 overflow-y-auto bg-[#121212]">
+        <p class="text-[11px] text-[#888] pb-1">Toggle raw ingredients out of stock to instantly update the owner's shopping/buy list:</p>
+        <div id="ingredients-list-container" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hbhbmadlsfhodardcwsf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let stockMenuCache = [];
+    let activeStockCategory = null;
+
+    function playChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.4);
+
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 1.2);
+      } catch (e) {
+        console.log("Audio context blocked", e);
+      }
+    }
+
+    async function login() {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      });
+      if (error) return alert(error.message);
+      checkUser();
+    }
+
+    async function checkUser() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        document.getElementById('auth-gate').classList.add('hidden');
+        document.getElementById('kds-app').classList.remove('hidden');
+        loadOrders();
+        
+        supabaseClient.channel('kds-sync')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
+            playChime();
+            loadOrders();
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, loadOrders)
+          .subscribe();
+      }
+    }
+
+    async function loadOrders() {
+      const { data: orders } = await supabaseClient.from('orders').select('*');
+      ['new', 'preparing', 'ready', 'served'].forEach(status => {
+        document.getElementById(`col-${status}`).innerHTML = '';
+      });
+
+      if (!orders) return;
+      orders.forEach(o => {
+        const col = document.getElementById(`col-${o.status.toLowerCase()}`);
+        if (col) {
+          col.innerHTML += `
+            <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded space-y-2">
+              <div class="flex justify-between text-xs font-mono"><span class="text-[#c5a059] font-bold">${o.table_id}</span><span class="text-[#666]">${o.id.slice(0,6)}</span></div>
+              <div class="text-xs text-[#ddd]">${o.items.map(i => `${i.qty}x ${i.name} ${i.notes ? `(${i.notes})` : ''}`).join('<br>')}</div>
+              ${o.status === 'NEW' ? `<button onclick="updateStatus('${o.id}', 'PREPARING')" class="w-full bg-blue-950/40 border border-blue-900/50 text-blue-400 text-[10px] font-bold py-1.5 rounded">START PREP</button>` : ''}
+              ${o.status === 'PREPARING' ? `<button onclick="updateStatus('${o.id}', 'READY')" class="w-full bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 text-[10px] font-bold py-1.5 rounded">MARK READY</button>` : ''}
+              ${o.status === 'READY' ? `<button onclick="updateStatus('${o.id}', 'SERVED')" class="w-full bg-[#222] text-[#aaa] text-[10px] font-bold py-1.5 rounded">MARK SERVED</button>` : ''}
+            </div>
+          `;
+        }
+      });
+    }
+
+    async function updateStatus(id, status) {
+      await supabaseClient.from('orders').update({ status }).eq('id', id);
+      loadOrders();
+    }
+
+    // --- MANAGE MODAL CONTROLLER ---
+    async function openManageModal() {
+      const modal = document.getElementById('manage-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        switchManageTab('products');
+      }
+    }
+
+    async function switchManageTab(tab) {
+      ['products', 'ingredients'].forEach(t => {
+        document.getElementById(`manage-content-${t}`).classList.add('hidden');
+        document.getElementById(`m-tab-${t}`).className = "px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent";
+      });
+      document.getElementById(`manage-content-${tab}`).classList.remove('hidden');
+      document.getElementById(`m-tab-${tab}`).className = "px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]";
+
+      if (tab === 'products') {
+        const { data: menu } = await supabaseClient.from('menu').select('*');
+        stockMenuCache = menu || [];
+        const categories = [...new Set(stockMenuCache.map(i => i.category || 'General'))];
+        if (!activeStockCategory || !categories.includes(activeStockCategory)) {
+          activeStockCategory = categories[0] || 'General';
+        }
+        renderStockDashboard();
+      } else if (tab === 'ingredients') {
+        loadIngredientsManager();
+      }
+    }
+
+    function renderStockDashboard() {
+      const categories = [...new Set(stockMenuCache.map(i => i.category || 'General'))];
+      const sidebar = document.getElementById('stock-categories');
+      sidebar.innerHTML = categories.map(cat => `
+        <button onclick="selectStockCategory('${cat}')" class="w-full text-left px-3 py-2 rounded text-xs font-semibold uppercase tracking-wider transition ${cat === activeStockCategory ? 'bg-[#1a1a1a] text-[#c5a059]' : 'text-[#888] hover:text-white'}">
+          ${cat}
+        </button>
+      `).join('');
+
+      const container = document.getElementById('stock-items-container');
+      const filteredItems = stockMenuCache.filter(i => (i.category || 'General') === activeStockCategory);
+
+      if (filteredItems.length === 0) {
+        container.innerHTML = '<p class="text-xs text-[#666] text-center py-10">No products found.</p>';
+        return;
+      }
+
+      container.innerHTML = filteredItems.map(item => `
+        <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
+          <div>
+            <p class="font-medium text-[#f5f5f7]">${item.name}</p>
+            <p class="text-[10px] font-mono text-[#888]">$${item.price.toFixed(2)}</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" ${item.is_available !== false ? 'checked' : ''} onchange="toggleStock('${item.id}', this.checked)" class="sr-only peer">
+            <div class="w-9 h-5 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c5a059]"></div>
+            <span class="ml-2 text-[10px] font-mono font-bold ${item.is_available !== false ? 'text-emerald-400' : 'text-red-400'}">${item.is_available !== false ? 'IN STOCK' : 'SOLD OUT'}</span>
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function selectStockCategory(cat) {
+      activeStockCategory = cat;
+      renderStockDashboard();
+    }
+
+    async function toggleStock(id, is_available) {
+      await supabaseClient.from('menu').update({ is_available }).eq('id', id);
+      const item = stockMenuCache.find(i => i.id === id);
+      if (item) item.is_available = is_available;
+    }
+
+    async function loadIngredientsManager() {
+      const { data: ingredients } = await supabaseClient.from('ingredients').select('*');
+      const container = document.getElementById('ingredients-list-container');
+
+      if (!ingredients || ingredients.length === 0) {
+        container.innerHTML = `<p class="text-xs text-[#666] text-center py-10">No raw ingredients added by owner yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = ingredients.map(ing => `
+        <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
+          <div>
+            <p class="font-bold text-[#f5f5f7]">${ing.name}</p>
+            <p class="text-[10px] text-[#888]">Category: ${ing.category}</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" ${ing.is_in_stock !== false ? 'checked' : ''} onchange="toggleIngredientStock('${ing.id}', this.checked)" class="sr-only peer">
+            <div class="w-9 h-5 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c5a059]"></div>
+            <span class="ml-2 text-[10px] font-mono font-bold ${ing.is_in_stock !== false ? 'text-emerald-400' : 'text-red-400'}">${ing.is_in_stock !== false ? 'IN STOCK' : 'OUT OF STOCK'}</span>
+          </label>
+        </div>
+      `).join('');
+    }
+
+    async function toggleIngredientStock(id, is_in_stock) {
+      await supabaseClient.from('ingredients').update({ is_in_stock }).eq('id', id);
+    }
+
+    checkUser();
+  </script>
+</body>
+</html>

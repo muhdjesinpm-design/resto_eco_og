@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RestoOS — Owner & Cashier Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; color: #000; background: #fff; padding: 10px; }
+    }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-[#f5f5f7] font-sans min-h-screen flex">
+
+  <!-- Auth Gate -->
+  <div id="auth-gate" class="max-w-sm mx-auto mt-32 bg-[#121212] border border-[#222] p-6 rounded absolute inset-x-0">
+    <h2 class="text-sm font-bold uppercase tracking-widest text-[#c5a059] mb-4">Executive Dashboard</h2>
+    <input id="owner-email" type="email" placeholder="Owner Email" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-sm rounded mb-3 text-white focus:outline-none focus:border-[#c5a059]">
+    <input id="owner-password" type="password" placeholder="Password" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-sm rounded mb-4 text-white focus:outline-none focus:border-[#c5a059]">
+    <button onclick="ownerLogin()" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-2.5 rounded tracking-wider uppercase">Access Portal</button>
+  </div>
+
+  <!-- Protected Owner App Layout -->
+  <div id="owner-app" class="hidden flex w-full min-h-screen">
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-[#121212] border-r border-[#222] p-6 flex flex-col justify-between">
+      <div class="space-y-6">
+        <div class="flex items-center space-x-2">
+          <span class="text-[#c5a059]">◆</span>
+          <span class="font-bold tracking-widest text-xs uppercase">RestoOS Admin</span>
+        </div>
+        <nav class="space-y-1">
+          <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase bg-[#1a1a1a] text-[#c5a059]">P&L Analytics</button>
+          <button onclick="switchTab('menu')" id="nav-menu" class="w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]">Menu & COGS</button>
+          <button onclick="switchTab('cashier')" id="nav-cashier" class="w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]">Cashier Desk</button>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-8 overflow-y-auto space-y-8">
+      
+      <!-- TAB 1: P&L ANALYTICS & ADVANCED METRICS -->
+      <section id="tab-analytics" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Financial P&L Overview</h2>
+          <div class="flex bg-[#121212] border border-[#222] p-1 rounded space-x-1">
+            <button onclick="setFilter('day')" id="filter-day" class="px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]">Day</button>
+            <button onclick="setFilter('week')" id="filter-week" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Week</button>
+            <button onclick="setFilter('month')" id="filter-month" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Month</button>
+            <button onclick="setFilter('net')" id="filter-net" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Net</button>
+          </div>
+        </div>
+        
+        <!-- Top KPI Cards -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="bg-[#121212] border border-[#222] p-5 rounded"><p class="text-[10px] tracking-widest text-[#888] uppercase">Gross Revenue</p><p id="pnl-rev" class="text-xl font-mono font-bold text-[#f5f5f7] mt-1">$0.00</p></div>
+          <div class="bg-[#121212] border border-[#222] p-5 rounded"><p class="text-[10px] tracking-widest text-[#888] uppercase">Total Cost (COGS)</p><p id="pnl-cogs" class="text-xl font-mono font-bold text-red-400 mt-1">$0.00</p></div>
+          <div class="bg-[#121212] border border-[#222] p-5 rounded"><p class="text-[10px] tracking-widest text-[#888] uppercase">Gross Profit</p><p id="pnl-profit" class="text-xl font-mono font-bold text-[#c5a059] mt-1">$0.00</p></div>
+          <div class="bg-[#121212] border border-[#222] p-5 rounded"><p class="text-[10px] tracking-widest text-[#888] uppercase">Margin %</p><p id="pnl-margin" class="text-xl font-mono font-bold text-blue-400 mt-1">0.0%</p></div>
+        </div>
+
+        <!-- NEW EXECUTIVE ANALYTICS GRIDS -->
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Top Selling Dishes -->
+          <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">🔥 Top Selling Dishes</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
+                  <tr>
+                    <th class="pb-2">Dish Name</th>
+                    <th class="pb-2">Qty Sold</th>
+                    <th class="pb-2 text-right">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody id="top-dishes-table" class="divide-y divide-[#222]">
+                  <tr><td colspan="3" class="py-4 text-center text-[#666]">No sales data recorded yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Payment Breakdown -->
+          <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">💳 Payment Method Reconciliation</h3>
+            <div class="space-y-3 pt-2">
+              <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
+                <span class="text-[#888]">Digital / Card Settlements</span>
+                <span id="pay-digital" class="font-mono font-bold text-[#f5f5f7]">$0.00</span>
+              </div>
+              <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
+                <span class="text-[#888]">Cash Drawer</span>
+                <span id="pay-cash" class="font-mono font-bold text-[#f5f5f7]">$0.00</span>
+              </div>
+              <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
+                <span class="text-[#888]">Total Settled Transactions</span>
+                <span id="pay-count" class="font-mono font-bold text-[#c5a059]">0 Orders</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Completed Transactions Ledger -->
+        <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">📋 Recent Completed Orders Ledger</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
+                <tr>
+                  <th class="pb-2">Order ID</th>
+                  <th class="pb-2">Table</th>
+                  <th class="pb-2">Items Summary</th>
+                  <th class="pb-2">Time</th>
+                  <th class="pb-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="completed-orders-ledger" class="divide-y divide-[#222]">
+                <tr><td colspan="5" class="py-4 text-center text-[#666]">No completed orders.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MENU & COGS ADMIN -->
+      <section id="tab-menu" class="hidden space-y-6">
+        <div class="flex flex-wrap border-b border-[#222] pb-4 gap-2">
+          <button onclick="switchMenuSubTab('add')" id="subnav-add" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]">Add Item</button>
+          <button onclick="switchMenuSubTab('stock')" id="subnav-stock" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Stock Manager</button>
+          <button onclick="switchMenuSubTab('margins')" id="subnav-margins" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Margin Analyzer</button>
+          <button onclick="switchMenuSubTab('pricing')" id="subnav-pricing" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Price Optimizer</button>
+          <button onclick="switchMenuSubTab('outstock')" id="subnav-outstock" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Menu Sold Out</button>
+          <button onclick="switchMenuSubTab('shopping')" id="subnav-shopping" class="px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent">Shopping / Buy List</button>
+        </div>
+
+        <div id="subtab-add" class="bg-[#121212] border border-[#222] p-6 rounded max-w-xl space-y-4">
+          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Add New Dish to Catalog</h3>
+          <form onsubmit="addMenuItem(event)" class="space-y-4">
+            <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Dish Title</label><input id="m-name" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="e.g. Wagyu Ribeye"></div>
+            <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Description</label><input id="m-desc" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="Served with truffle butter"></div>
+            <div class="grid grid-cols-3 gap-3">
+              <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Category</label><input id="m-cat" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="Mains"></div>
+              <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Price ($)</label><input id="m-price" required type="number" step="0.01" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="45.00"></div>
+              <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Cost / COGS ($)</label><input id="m-cost" required type="number" step="0.01" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="12.00"></div>
+            </div>
+            <button type="submit" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-2.5 rounded uppercase tracking-wider">Save Dish to Menu</button>
+          </form>
+        </div>
+
+        <div id="subtab-stock" class="hidden bg-[#121212] border border-[#222] rounded-lg flex h-[450px] overflow-hidden">
+          <div id="stock-categories" class="w-48 bg-[#0e0e0e] border-r border-[#222] p-3 space-y-1 overflow-y-auto"></div>
+          <div id="stock-items-container" class="flex-1 p-4 space-y-3 overflow-y-auto bg-[#121212]"></div>
+        </div>
+
+        <div id="subtab-margins" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Recipe Profitability & Margin Audit</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
+                <tr>
+                  <th class="pb-3">Dish Name</th>
+                  <th class="pb-3">Category</th>
+                  <th class="pb-3">Price</th>
+                  <th class="pb-3">COGS</th>
+                  <th class="pb-3">Profit Margin</th>
+                  <th class="pb-3">Rating</th>
+                </tr>
+              </thead>
+              <tbody id="margin-audit-table" class="divide-y divide-[#222]"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="subtab-pricing" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Quick Price & Cost Optimizer</h3>
+          <div id="price-optimizer-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2"></div>
+        </div>
+
+        <div id="subtab-outstock" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
+          <div class="flex justify-between items-center border-b border-[#222] pb-3">
+            <h3 class="text-xs font-bold tracking-widest text-red-400 uppercase">⚠️ Sold Out Menu Items</h3>
+            <span id="outstock-count" class="text-xs font-mono bg-red-950/40 border border-red-900 text-red-400 px-2.5 py-1 rounded">0 Items Unavailable</span>
+          </div>
+          <div id="outstock-audit-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2"></div>
+        </div>
+
+        <div id="subtab-shopping" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-6">
+          <div class="flex justify-between items-center border-b border-[#222] pb-3">
+            <div>
+              <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">🛒 Kitchen Shopping & Buy List</h3>
+            </div>
+            <button onclick="openAddIngredientModal()" class="bg-[#c5a059] text-[#0a0a0a] text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wider">+ Add Raw Ingredient</button>
+          </div>
+          <div id="shopping-list-container" class="space-y-3 max-h-[350px] overflow-y-auto pr-2"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: CASHIER DESK -->
+      <section id="tab-cashier" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Cashier & Unfulfilled Orders</h2>
+          <button onclick="printShiftReport()" class="border border-[#333] hover:border-[#c5a059] text-xs font-mono px-3 py-1.5 rounded text-[#ccc]">🖨️ PRINT SHIFT REPORT</button>
+        </div>
+        <div id="cashier-orders" class="space-y-3"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Add Raw Ingredient Modal -->
+  <div id="add-ingredient-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121212] border border-[#222] w-full max-w-md p-6 rounded-lg space-y-4">
+      <div class="flex justify-between items-center border-b border-[#222] pb-3">
+        <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Add Raw Ingredient to Inventory</h3>
+        <button onclick="openAddIngredientModal()" class="text-[#888] hover:text-white">✕</button>
+      </div>
+      <form onsubmit="saveNewIngredient(event)" class="space-y-4">
+        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Ingredient Name</label><input id="ing-name" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="e.g. Basmati Rice, Onions"></div>
+        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Category / Supplier</label><input id="ing-cat" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="Vegetables / Spices"></div>
+        <button type="submit" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-2.5 rounded uppercase tracking-wider">Add Ingredient</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="printable-receipt" class="hidden"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://hbhbmadlsfhodardcwsf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let currentFilter = 'day';
+    let globalMenuCache = [];
+    let globalIngredientsCache = [];
+    let activeStockCategory = null;
+
+    async function ownerLogin() {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: document.getElementById('owner-email').value,
+        password: document.getElementById('owner-password').value
+      });
+      if (error) return alert(error.message);
+      initDashboard();
+    }
+
+    async function initDashboard() {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        document.getElementById('auth-gate').classList.add('hidden');
+        document.getElementById('owner-app').classList.remove('hidden');
+        loadAnalytics();
+        loadCashierOrders();
+        fetchMenuData();
+        fetchIngredientsData();
+      }
+    }
+
+    async function fetchMenuData() {
+      const { data: menu } = await supabaseClient.from('menu').select('*');
+      globalMenuCache = menu || [];
+    }
+
+    async function fetchIngredientsData() {
+      const { data: ing } = await supabaseClient.from('ingredients').select('*');
+      globalIngredientsCache = ing || [];
+    }
+
+    function switchTab(tab) {
+      ['analytics', 'menu', 'cashier'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]";
+      });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase bg-[#1a1a1a] text-[#c5a059]";
+      if (tab === 'analytics') loadAnalytics();
+    }
+
+    async function switchMenuSubTab(sub) {
+      await fetchMenuData();
+      await fetchIngredientsData();
+      ['add', 'stock', 'margins', 'pricing', 'outstock', 'shopping'].forEach(s => {
+        document.getElementById(`subtab-${s}`).classList.add('hidden');
+        document.getElementById(`subnav-${s}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent";
+      });
+      document.getElementById(`subtab-${sub}`).classList.remove('hidden');
+      document.getElementById(`subnav-${sub}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]";
+
+      if (sub === 'stock') {
+        const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
+        if (!activeStockCategory || !categories.includes(activeStockCategory)) {
+          activeStockCategory = categories[0] || 'General';
+        }
+        renderStockDashboard();
+      } else if (sub === 'margins') {
+        renderMarginAudit();
+      } else if (sub === 'pricing') {
+        renderPriceOptimizer();
+      } else if (sub === 'outstock') {
+        renderOutStockAudit();
+      } else if (sub === 'shopping') {
+        renderShoppingList();
+      }
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['day', 'week', 'month', 'net'].forEach(f => {
+        document.getElementById(`filter-${f}`).className = f === filter ? "px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]" : "px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]";
+      });
+      loadAnalytics();
+    }
+
+    async function loadAnalytics() {
+      const { data: orders } = await supabaseClient.from('orders').select('*').eq('payment_status', 'PAID');
+      const { data: menu } = await supabaseClient.from('menu').select('*');
+      const costMap = {};
+      (menu || []).forEach(m => costMap[m.name] = m.cost || 0);
+
+      let rev = 0, cogs = 0;
+      let digitalRev = 0, cashRev = 0;
+      const dishSales = {};
+      const now = new Date();
+
+      (orders || []).forEach(o => {
+        const orderDate = new Date(o.created_at);
+        if (currentFilter === 'day' && orderDate.toDateString() !== now.toDateString()) return;
+        if (currentFilter === 'week' && (now - orderDate) > 7 * 24 * 60 * 60 * 1000) return;
+        if (currentFilter === 'month' && orderDate.getMonth() !== now.getMonth()) return;
+
+        rev += o.total_amount;
+        digitalRev += o.total_amount; // Assuming card/digital by default or split
+
+        o.items.forEach(i => {
+          cogs += (costMap[i.name] || 0) * i.qty;
+          if (!dishSales[i.name]) dishSales[i.name] = { qty: 0, rev: 0 };
+          dishSales[i.name].qty += i.qty;
+          dishSales[i.name].rev += i.price * i.qty;
+        });
+      });
+
+      const profit = rev - cogs;
+      const margin = rev > 0 ? ((profit / rev) * 100).toFixed(1) : 0;
+
+      document.getElementById('pnl-rev').innerText = `$${rev.toFixed(2)}`;
+      document.getElementById('pnl-cogs').innerText = `$${cogs.toFixed(2)}`;
+      document.getElementById('pnl-profit').innerText = `$${profit.toFixed(2)}`;
+      document.getElementById('pnl-margin').innerText = `${margin}%`;
+
+      document.getElementById('pay-digital').innerText = `$${digitalRev.toFixed(2)}`;
+      document.getElementById('pay-cash').innerText = `$${cashRev.toFixed(2)}`;
+      document.getElementById('pay-count').innerText = `${(orders || []).length} Orders`;
+
+      // Render Top Dishes
+      const dishTable = document.getElementById('top-dishes-table');
+      const sortedDishes = Object.entries(dishSales).sort((a,b) => b[1].rev - a[1].rev);
+      if (sortedDishes.length === 0) {
+        dishTable.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-[#666]">No sales data recorded yet.</td></tr>`;
+      } else {
+        dishTable.innerHTML = sortedDishes.map(([name, data]) => `
+          <tr>
+            <td class="py-2.5 font-medium text-[#f5f5f7]">${name}</td>
+            <td class="py-2.5 text-[#888] font-mono">${data.qty}x</td>
+            <td class="py-2.5 text-right font-mono text-[#c5a059]">$${data.rev.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Render Completed Orders Ledger
+      const ledger = document.getElementById('completed-orders-ledger');
+      const paidOrders = (orders || []).slice(0, 10);
+      if (paidOrders.length === 0) {
+        ledger.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-[#666]">No completed orders.</td></tr>`;
+      } else {
+        ledger.innerHTML = paidOrders.map(o => `
+          <tr>
+            <td class="py-2.5 font-mono text-[#c5a059]">#${o.id.slice(0,6)}</td>
+            <td class="py-2.5 text-[#f5f5f7]">${o.table_id}</td>
+            <td class="py-2.5 text-[#888]">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
+            <td class="py-2.5 text-[#666] text-[10px]">${new Date(o.created_at).toLocaleTimeString()}</td>
+            <td class="py-2.5 text-right font-mono font-bold text-white">$${o.total_amount.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function addMenuItem(e) {
+      e.preventDefault();
+      await supabaseClient.from('menu').insert([{
+        name: document.getElementById('m-name').value,
+        description: document.getElementById('m-desc').value,
+        category: document.getElementById('m-cat').value,
+        price: parseFloat(document.getElementById('m-price').value),
+        cost: parseFloat(document.getElementById('m-cost').value),
+        is_available: true
+      }]);
+      alert('Dish successfully added to menu database.');
+      e.target.reset();
+      fetchMenuData();
+    }
+
+    function renderStockDashboard() {
+      const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
+      const sidebar = document.getElementById('stock-categories');
+      sidebar.innerHTML = categories.map(cat => `
+        <button onclick="selectStockCategory('${cat}')" class="w-full text-left px-3 py-2 rounded text-xs font-semibold uppercase tracking-wider transition ${cat === activeStockCategory ? 'bg-[#1a1a1a] text-[#c5a059]' : 'text-[#888] hover:text-white'}">
+          ${cat}
+        </button>
+      `).join('');
+
+      const container = document.getElementById('stock-items-container');
+      const filteredItems = globalMenuCache.filter(i => (i.category || 'General') === activeStockCategory);
+
+      if (filteredItems.length === 0) {
+        container.innerHTML = '<p class="text-xs text-[#666] text-center py-10">No items found.</p>';
+        return;
+      }
+
+      container.innerHTML = filteredItems.map(item => `
+        <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
+          <div>
+            <p class="font-medium text-[#f5f5f7]">${item.name}</p>
+            <p class="text-[10px] font-mono text-[#888]">$${item.price.toFixed(2)}</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" ${item.is_available !== false ? 'checked' : ''} onchange="toggleStock('${item.id}', this.checked)" class="sr-only peer">
+            <div class="w-9 h-5 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c5a059]"></div>
+            <span class="ml-2 text-[10px] font-mono font-bold ${item.is_available !== false ? 'text-emerald-400' : 'text-red-400'}">${item.is_available !== false ? 'IN STOCK' : 'SOLD OUT'}</span>
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function selectStockCategory(cat) {
+      activeStockCategory = cat;
+      renderStockDashboard();
+    }
+
+    async function toggleStock(id, is_available) {
+      await supabaseClient.from('menu').update({ is_available }).eq('id', id);
+      const item = globalMenuCache.find(i => i.id === id);
+      if (item) item.is_available = is_available;
+    }
+
+    function renderMarginAudit() {
+      const tbody = document.getElementById('margin-audit-table');
+      if (globalMenuCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-[#666]">No menu items found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = globalMenuCache.map(item => {
+        const price = item.price || 0;
+        const cost = item.cost || 0;
+        const profit = price - cost;
+        const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
+        const ratingColor = margin >= 70 ? 'text-emerald-400 bg-emerald-950/40 border-emerald-900' : margin >= 50 ? 'text-blue-400 bg-blue-950/40 border-blue-900' : 'text-amber-400 bg-amber-950/40 border-amber-900';
+        const ratingText = margin >= 70 ? 'EXCELLENT' : margin >= 50 ? 'GOOD' : 'LOW';
+
+        return `
+          <tr>
+            <td class="py-3 font-medium text-[#f5f5f7]">${item.name}</td>
+            <td class="py-3 text-[#888]">${item.category || 'General'}</td>
+            <td class="py-3 font-mono text-[#c5a059]">$${price.toFixed(2)}</td>
+            <td class="py-3 font-mono text-red-400">$${cost.toFixed(2)}</td>
+            <td class="py-3 font-mono font-bold text-white">${margin}%</td>
+            <td class="py-3"><span class="px-2 py-0.5 rounded text-[9px] font-bold border ${ratingColor}">${ratingText}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderPriceOptimizer() {
+      const container = document.getElementById('price-optimizer-list');
+      if (globalMenuCache.length === 0) {
+        container.innerHTML = `<p class="text-xs text-[#666] text-center py-4">No menu items found.</p>`;
+        return;
+      }
+
+      container.innerHTML = globalMenuCache.map(item => `
+        <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-[#f5f5f7]">${item.name}</p>
+            <p class="text-[10px] text-[#888]">Category: ${item.category || 'General'}</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div>
+              <label class="block text-[9px] text-[#888] uppercase">Price ($)</label>
+              <input type="number" step="0.01" value="${item.price}" id="price-${item.id}" class="w-20 bg-[#121212] border border-[#333] p-1.5 rounded text-white font-mono text-xs">
+            </div>
+            <div>
+              <label class="block text-[9px] text-[#888] uppercase">COGS ($)</label>
+              <input type="number" step="0.01" value="${item.cost || 0}" id="cost-${item.id}" class="w-20 bg-[#121212] border border-[#333] p-1.5 rounded text-white font-mono text-xs">
+            </div>
+            <button onclick="updateItemPricing('${item.id}')" class="mt-4 bg-[#c5a059] hover:bg-[#b08d48] text-[#0a0a0a] font-bold px-3 py-1.5 rounded text-xs uppercase">Save</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateItemPricing(id) {
+      const newPrice = parseFloat(document.getElementById(`price-${id}`).value);
+      const newCost = parseFloat(document.getElementById(`cost-${id}`).value);
+      
+      const { error } = await supabaseClient.from('menu').update({ price: newPrice, cost: newCost }).eq('id', id);
+      if (error) {
+        alert('Error updating price: ' + error.message);
+      } else {
+        alert('Item pricing updated successfully.');
+        fetchMenuData();
+      }
+    }
+
+    function renderOutStockAudit() {
+      const outOfStockItems = globalMenuCache.filter(i => i.is_available === false);
+      document.getElementById('outstock-count').innerText = `${outOfStockItems.length} Items Unavailable`;
+      const container = document.getElementById('outstock-audit-list');
+
+      if (outOfStockItems.length === 0) {
+        container.innerHTML = `<p class="text-xs text-[#666] text-center py-6">All menu items are currently in stock and available.</p>`;
+        return;
+      }
+
+      container.innerHTML = outOfStockItems.map(item => `
+        <div class="bg-[#0a0a0a] border border-red-900/40 p-3 rounded flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-red-400">${item.name}</p>
+            <p class="text-[10px] text-[#888]">Category: ${item.category || 'General'} | Price: $${item.price.toFixed(2)}</p>
+          </div>
+          <button onclick="restoreStockFromAudit('${item.id}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 font-bold px-3 py-1.5 rounded text-[10px] uppercase">RESTOCK ITEM</button>
+        </div>
+      `).join('');
+    }
+
+    async function restoreStockFromAudit(id) {
+      await supabaseClient.from('menu').update({ is_available: true }).eq('id', id);
+      await fetchMenuData();
+      renderOutStockAudit();
+    }
+
+    function openAddIngredientModal() {
+      document.getElementById('add-ingredient-modal').classList.toggle('hidden');
+    }
+
+    async function saveNewIngredient(e) {
+      e.preventDefault();
+      await supabaseClient.from('ingredients').insert([{
+        name: document.getElementById('ing-name').value,
+        category: document.getElementById('ing-cat').value,
+        is_in_stock: true
+      }]);
+      alert('Raw ingredient added to inventory catalog.');
+      e.target.reset();
+      openAddIngredientModal();
+      await fetchIngredientsData();
+      renderShoppingList();
+    }
+
+    function renderShoppingList() {
+      const shortageList = globalIngredientsCache.filter(i => i.is_in_stock === false);
+      const container = document.getElementById('shopping-list-container');
+
+      if (shortageList.length === 0) {
+        container.innerHTML = `<p class="text-xs text-[#666] text-center py-6">No pending ingredient shortages. Kitchen has full stock.</p>`;
+        return;
+      }
+
+      container.innerHTML = shortageList.map(ing => `
+        <div class="bg-[#0a0a0a] border border-red-900/40 p-3 rounded flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-red-400">🛒 Buy: ${ing.name}</p>
+            <p class="text-[10px] text-[#888]">Category: ${ing.category} — Reported Out of Stock by Kitchen</p>
+          </div>
+          <button onclick="restockIngredient('${ing.id}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 font-bold px-3 py-1.5 rounded text-[10px] uppercase">MARK PURCHASED / RESTOCKED</button>
+        </div>
+      `).join('');
+    }
+
+    async function restockIngredient(id) {
+      await supabaseClient.from('ingredients').update({ is_in_stock: true }).eq('id', id);
+      await fetchIngredientsData();
+      renderShoppingList();
+    }
+
+    async function loadCashierOrders() {
+      const { data: orders } = await supabaseClient.from('orders').select('*').eq('payment_status', 'UNPAID');
+      const container = document.getElementById('cashier-orders');
+      if (!orders || orders.length === 0) {
+        container.innerHTML = '<p class="text-xs text-[#666]">No unfulfilled payment orders pending.</p>';
+        return;
+      }
+      container.innerHTML = orders.map(o => `
+        <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center text-xs">
+          <div><span class="text-[#c5a059] font-bold">${o.table_id}</span> (${o.id.slice(0,6)})<p class="text-[#888] mt-1">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p></div>
+          <div class="text-right flex items-center space-x-3">
+            <span class="font-mono font-bold">$${o.total_amount.toFixed(2)}</span>
+            <button onclick='printReceipt(${JSON.stringify(o)})' class="border border-[#333] px-2.5 py-1.5 rounded text-[#aaa]">🖨️ RECEIPT</button>
+            <button onclick="markPaid('${o.id}')" class="bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 font-bold px-3 py-1.5 rounded">MARK PAID</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function markPaid(id) {
+      await supabaseClient.from('orders').update({ payment_status: 'PAID' }).eq('id', id);
+      loadCashierOrders();
+      loadAnalytics();
+    }
+
+    function printReceipt(order) {
+      const receiptDiv = document.getElementById('printable-receipt');
+      receiptDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 10px;">
+          <h3>RESTOOS LUXURY DINING</h3>
+          <p>Table: ${order.table_id}</p>
+          <p>Order ID: ${order.id.slice(0,8)}</p>
+          <p>${new Date(order.created_at).toLocaleString()}</p>
+        </div>
+        <hr style="border-top: dashed 1px #000;" />
+        <ul style="list-style: none; padding: 0;">
+          ${order.items.map(i => `<li style="display: flex; justify-between;"><span>${i.qty}x ${i.name}</span><span>$${(i.price * i.qty).toFixed(2)}</span></li>`).join('')}
+        </ul>
+        <hr style="border-top: dashed 1px #000;" />
+        <p style="text-align: right; font-weight: bold;">TOTAL: $${order.total_amount.toFixed(2)}</p>
+        <p style="text-align: center; margin-top: 15px;">Thank you for your visit.</p>
+      `;
+      window.print();
+    }
+
+    async function printShiftReport() {
+      const { data: orders } = await supabaseClient.from('orders').select('*').eq('payment_status', 'PAID');
+      let totalRev = (orders || []).reduce((sum, o) => sum + o.total_amount, 0);
+      
+      const receiptDiv = document.getElementById('printable-receipt');
+      receiptDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 10px;">
+          <h3>RESTOOS SHIFT REPORT</h3>
+          <p>${new Date().toLocaleString()}</p>
+        </div>
+        <hr style="border-top: dashed 1px #000;" />
+        <p>Total Paid Orders: ${(orders || []).length}</p>
+        <p style="font-weight: bold; font-size: 14px;">Gross Revenue: $${totalRev.toFixed(2)}</p>
+        <hr style="border-top: dashed 1px #000;" />
+        <p style="text-align: center;">End of Shift Summary</p>
+      `;
+      window.print();
+    }
+  </script>
+</body>
+</html>
