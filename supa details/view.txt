@@ -1,5 +1,0 @@
-pass - t%PpG7RX4wF9@5Y
-
-api key - sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu
-
-url - https://hbhbmadlsfhodardcwsf.supabase.co/rest/v1/
