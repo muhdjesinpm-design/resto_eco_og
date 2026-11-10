@@ -1,6 +1,6 @@
 table link - https://restoecoog.vercel.app/?table=Table-1
 
-admin link - https://restoecoog.vercel.app/owner.html
+admin link - https://restoecoog.vercel.app/admin.html
 
 kitchen link - https://restoecoog.vercel.app/kitchen.html
 

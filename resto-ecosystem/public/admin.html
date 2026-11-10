@@ -33,10 +33,8 @@
           <span class="font-bold tracking-widest text-xs uppercase">RestoOS Admin</span>
         </div>
         
-        <!-- Owner Account Section -->
-        <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded">
-          <p class="text-[9px] uppercase tracking-wider text-[#888]">Owner Account</p>
-          <p id="owner-email-display" class="text-xs font-mono text-white truncate mt-0.5">Loading...</p>
+        <div id="owner-account-box" class="bg-[#0a0a0a] border border-[#222] p-3 rounded text-[11px] font-mono text-[#aaa]">
+          OWNER ACCOUNT<br><span id="owner-email-display" class="text-[#c5a059] font-bold">Loading...</span>
         </div>
 
         <nav class="space-y-1">
@@ -45,10 +43,17 @@
           <button onclick="switchTab('cashier')" id="nav-cashier" class="w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]">Cashier Desk</button>
           <button onclick="switchTab('audit')" id="nav-audit" class="w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]">Audit Logs</button>
         </nav>
+
+        <!-- Daily History Section -->
+        <div class="pt-4 border-t border-[#222]">
+          <p class="text-[10px] uppercase tracking-widest text-[#666] mb-2 font-bold">Daily History Archives</p>
+          <div id="sidebar-history-list" class="space-y-1 max-h-40 overflow-y-auto">
+            <p class="text-[10px] text-[#555]">No stored past shifts yet.</p>
+          </div>
+        </div>
       </div>
-      <div>
-        <button onclick="ownerLogout()" class="w-full bg-red-950/40 border border-red-900 text-red-400 text-xs font-bold py-2 rounded uppercase tracking-wider">Log Out</button>
-      </div>
+
+      <button onclick="logoutOwner()" class="w-full bg-red-950/40 border border-red-900/50 text-red-400 text-xs font-bold py-2 rounded tracking-wider uppercase">Log Out</button>
     </aside>
 
     <!-- Main Content Area -->
@@ -58,11 +63,14 @@
       <section id="tab-analytics" class="space-y-6">
         <div class="flex justify-between items-center">
           <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Financial P&L Overview</h2>
-          <div class="flex bg-[#121212] border border-[#222] p-1 rounded space-x-1">
-            <button onclick="setFilter('day')" id="filter-day" class="px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]">Day</button>
-            <button onclick="setFilter('week')" id="filter-week" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Week</button>
-            <button onclick="setFilter('month')" id="filter-month" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Month</button>
-            <button onclick="setFilter('net')" id="filter-net" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Net</button>
+          <div class="flex items-center space-x-3">
+            <button onclick="storeAndCloseShift()" class="bg-red-950/40 border border-red-900 text-red-400 font-bold text-xs px-3 py-1.5 rounded uppercase tracking-wider hover:bg-red-900/40 transition">Store & Close Shift</button>
+            <div class="flex bg-[#121212] border border-[#222] p-1 rounded space-x-1">
+              <button onclick="setFilter('day')" id="filter-day" class="px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]">Day</button>
+              <button onclick="setFilter('week')" id="filter-week" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Week</button>
+              <button onclick="setFilter('month')" id="filter-month" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Month</button>
+              <button onclick="setFilter('net')" id="filter-net" class="px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]">Net</button>
+            </div>
           </div>
         </div>
         
@@ -77,15 +85,11 @@
         <div class="grid grid-cols-2 gap-6">
           <!-- Top Selling Dishes -->
           <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
-            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Top Selling Dishes</h3>
+            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">🔥 Top Selling Dishes</h3>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
                 <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
-                  <tr>
-                    <th class="pb-2">Dish Name</th>
-                    <th class="pb-2">Qty Sold</th>
-                    <th class="pb-2 text-right">Revenue</th>
-                  </tr>
+                  <tr><th class="pb-2">Dish Name</th><th class="pb-2">Qty Sold</th><th class="pb-2 text-right">Revenue</th></tr>
                 </thead>
                 <tbody id="top-dishes-table" class="divide-y divide-[#222]">
                   <tr><td colspan="3" class="py-4 text-center text-[#666]">No sales data recorded yet.</td></tr>
@@ -96,7 +100,7 @@
 
           <!-- Payment Breakdown -->
           <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
-            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Payment Method Reconciliation</h3>
+            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">💳 Payment Method Reconciliation</h3>
             <div class="space-y-3 pt-2">
               <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
                 <span class="text-[#888]">Digital / Card Settlements</span>
@@ -116,17 +120,11 @@
 
         <!-- Recent Completed Transactions Ledger -->
         <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
-          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Recent Completed Orders Ledger</h3>
+          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">📋 Recent Completed Orders Ledger</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
-                <tr>
-                  <th class="pb-2">Order ID</th>
-                  <th class="pb-2">Table</th>
-                  <th class="pb-2">Items Summary</th>
-                  <th class="pb-2">Time</th>
-                  <th class="pb-2 text-right">Amount</th>
-                </tr>
+                <tr><th class="pb-2">Order ID</th><th class="pb-2">Table</th><th class="pb-2">Items Summary</th><th class="pb-2">Time</th><th class="pb-2 text-right">Amount</th></tr>
               </thead>
               <tbody id="completed-orders-ledger" class="divide-y divide-[#222]">
                 <tr><td colspan="5" class="py-4 text-center text-[#666]">No completed orders.</td></tr>
@@ -168,21 +166,12 @@
 
         <div id="subtab-margins" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
           <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Recipe Profitability & Margin Audit</h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
-                <tr>
-                  <th class="pb-3">Dish Name</th>
-                  <th class="pb-3">Category</th>
-                  <th class="pb-3">Price</th>
-                  <th class="pb-3">COGS</th>
-                  <th class="pb-3">Profit Margin</th>
-                  <th class="pb-3">Rating</th>
-                </tr>
-              </thead>
-              <tbody id="margin-audit-table" class="divide-y divide-[#222]"></tbody>
-            </table>
-          </div>
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
+              <tr><th class="pb-3">Dish Name</th><th class="pb-3">Category</th><th class="pb-3">Price</th><th class="pb-3">COGS</th><th class="pb-3">Profit Margin</th><th class="pb-3">Rating</th></tr>
+            </thead>
+            <tbody id="margin-audit-table" class="divide-y divide-[#222]"></tbody>
+          </table>
         </div>
 
         <div id="subtab-pricing" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
@@ -192,7 +181,7 @@
 
         <div id="subtab-outstock" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-4">
           <div class="flex justify-between items-center border-b border-[#222] pb-3">
-            <h3 class="text-xs font-bold tracking-widest text-red-400 uppercase">Sold Out Menu Items</h3>
+            <h3 class="text-xs font-bold tracking-widest text-red-400 uppercase">⚠️ Sold Out Menu Items</h3>
             <span id="outstock-count" class="text-xs font-mono bg-red-950/40 border border-red-900 text-red-400 px-2.5 py-1 rounded">0 Items Unavailable</span>
           </div>
           <div id="outstock-audit-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2"></div>
@@ -200,47 +189,41 @@
 
         <div id="subtab-shopping" class="hidden bg-[#121212] border border-[#222] p-6 rounded space-y-6">
           <div class="flex justify-between items-center border-b border-[#222] pb-3">
-            <div>
-              <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Kitchen Shopping & Buy List</h3>
-            </div>
+            <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">🛒 Kitchen Shopping & Buy List</h3>
             <button onclick="openAddIngredientModal()" class="bg-[#c5a059] text-[#0a0a0a] text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wider">+ Add Raw Ingredient</button>
           </div>
           <div id="shopping-list-container" class="space-y-3 max-h-[350px] overflow-y-auto pr-2"></div>
         </div>
       </section>
 
-      <!-- TAB 3: CASHIER DESK -->
+      <!-- TAB 3: CASHIER DESK (VIEW ONLY + PRINT BILL) -->
       <section id="tab-cashier" class="hidden space-y-6">
         <div class="flex justify-between items-center">
-          <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Cashier & Unfulfilled Orders</h2>
-          <button onclick="printShiftReport()" class="border border-[#333] hover:border-[#c5a059] text-xs font-mono px-3 py-1.5 rounded text-[#ccc]">PRINT SHIFT REPORT</button>
+          <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Cashier Desk — Today's Orders</h2>
+          <button onclick="printShiftReport()" class="border border-[#333] hover:border-[#c5a059] text-xs font-mono px-3 py-1.5 rounded text-[#ccc]">🖨️ PRINT SHIFT REPORT</button>
         </div>
-        <div id="cashier-orders" class="space-y-3"></div>
+        <div id="cashier-orders" class="space-y-3">
+          <p class="text-xs text-[#666]">No active orders for today.</p>
+        </div>
       </section>
 
       <!-- TAB 4: AUDIT LOGS -->
       <section id="tab-audit" class="hidden space-y-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">System Activity & Audit History</h2>
-        </div>
-        <div class="bg-[#121212] border border-[#222] p-6 rounded space-y-4">
-          <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Change History & Modified Details</h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="border-b border-[#222] text-[#888] uppercase text-[10px]">
-                <tr>
-                  <th class="pb-3">Timestamp</th>
-                  <th class="pb-3">Owner Email</th>
-                  <th class="pb-3">Action Type</th>
-                  <th class="pb-3">Target Item / Details</th>
-                </tr>
-              </thead>
-              <tbody id="audit-logs-table" class="divide-y divide-[#222]">
-                <tr><td colspan="4" class="py-4 text-center text-[#666]">Loading audit records...</td></tr>
-              </tbody>
-            </table>
+        <h2 class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">System Audit Trail</h2>
+        <div class="bg-[#121212] border border-[#222] p-6 rounded">
+          <div id="audit-logs-container" class="space-y-2 text-xs font-mono text-[#aaa]">
+            <p class="text-[#666]">Loading system logs...</p>
           </div>
         </div>
+      </section>
+
+      <!-- TAB 5: HISTORICAL ARCHIVE VIEWER -->
+      <section id="tab-archive" class="hidden space-y-6">
+        <div class="flex justify-between items-center border-b border-[#222] pb-4">
+          <h2 id="archive-title" class="text-sm font-bold tracking-widest uppercase text-[#c5a059]">Historical Archive</h2>
+          <button onclick="printArchiveReport()" class="border border-[#333] hover:border-[#c5a059] text-xs font-mono px-3 py-1.5 rounded text-[#ccc]">🖨️ PRINT ARCHIVE SUMMARY</button>
+        </div>
+        <div id="archive-orders-container" class="space-y-3"></div>
       </section>
 
     </main>
@@ -254,8 +237,8 @@
         <button onclick="openAddIngredientModal()" class="text-[#888] hover:text-white">✕</button>
       </div>
       <form onsubmit="saveNewIngredient(event)" class="space-y-4">
-        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Ingredient Name</label><input id="ing-name" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="e.g. Basmati Rice, Onions"></div>
-        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Category / Supplier</label><input id="ing-cat" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="Vegetables / Spices"></div>
+        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Ingredient Name</label><input id="ing-name" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="e.g. Basmati Rice"></div>
+        <div><label class="block text-[10px] uppercase tracking-wider text-[#888] mb-1">Category</label><input id="ing-cat" required class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white" placeholder="Vegetables / Spices"></div>
         <button type="submit" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-2.5 rounded uppercase tracking-wider">Add Ingredient</button>
       </form>
     </div>
@@ -264,513 +247,501 @@
   <div id="printable-receipt" class="hidden"></div>
 
   <script>
-    const SUPABASE_URL = 'https://hbhbmadlsfhodardcwsf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    let currentFilter = 'day';
-    let globalMenuCache = [];
-    let globalIngredientsCache = [];
-    let activeStockCategory = null;
+  const SUPABASE_URL = 'https://hbhbmadlsfhodardcwsf.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  
+  let currentFilter = 'day';
+  let globalMenuCache = [];
+  let globalIngredientsCache = [];
+  let activeStockCategory = null;
 
-    // Session Management & Persistence on Refresh
-    async function checkAuthSession() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('owner-app').classList.remove('hidden');
-        document.getElementById('owner-email-display').innerText = session.user.email;
-        initDashboard();
-      }
-    }
+  async function ownerLogin() {
+    const email = document.getElementById('owner-email').value;
+    const password = document.getElementById('owner-password').value;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) return alert(error.message);
+    logAuditAction('Owner Login', email);
+    initDashboard();
+  }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('owner-app').classList.remove('hidden');
-        document.getElementById('owner-email-display').innerText = session.user.email;
-        initDashboard();
-      } else if (event === 'SIGNED_OUT') {
-        document.getElementById('owner-app').classList.add('hidden');
-        document.getElementById('auth-gate').classList.remove('hidden');
-      }
-    });
+  async function logoutOwner() {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  }
 
-    async function ownerLogin() {
-      const { error } = await supabaseClient.auth.signInWithPassword({
-        email: document.getElementById('owner-email').value,
-        password: document.getElementById('owner-password').value
-      });
-      if (error) return alert(error.message);
-    }
+  async function logAuditAction(action, details) {
+    await supabaseClient.from('audit_logs').insert([{ action, details, timestamp: new Date().toISOString() }]);
+  }
 
-    async function ownerLogout() {
-      await supabaseClient.auth.signOut();
-    }
-
-    async function initDashboard() {
+  async function initDashboard() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) {
+      document.getElementById('auth-gate').classList.add('hidden');
+      document.getElementById('owner-app').classList.remove('hidden');
+      document.getElementById('owner-email-display').innerText = user.email;
+      
       loadAnalytics();
       loadCashierOrders();
       fetchMenuData();
       fetchIngredientsData();
       loadAuditLogs();
+      loadHistorySidebar();
+
+      // Realtime listener for Kitchen Updates & Customer Orders
+      supabaseClient.channel('owner-realtime-desk')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+          loadCashierOrders();
+          loadAnalytics();
+        })
+        .subscribe();
     }
+  }
 
-    async function fetchMenuData() {
-      const { data: menu } = await supabaseClient.from('menu').select('*');
-      globalMenuCache = menu || [];
-    }
+  async function fetchMenuData() {
+    const { data: menu } = await supabaseClient.from('menu').select('*');
+    globalMenuCache = menu || [];
+  }
 
-    async function fetchIngredientsData() {
-      const { data: ing } = await supabaseClient.from('ingredients').select('*');
-      globalIngredientsCache = ing || [];
-    }
+  async function fetchIngredientsData() {
+    const { data: ing } = await supabaseClient.from('ingredients').select('*');
+    globalIngredientsCache = ing || [];
+  }
 
-    function switchTab(tab) {
-      ['analytics', 'menu', 'cashier', 'audit'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`nav-${t}`).className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]";
-      });
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      document.getElementById(`nav-${tab}`).className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase bg-[#1a1a1a] text-[#c5a059]";
-      if (tab === 'analytics') loadAnalytics();
-      if (tab === 'audit') loadAuditLogs();
-    }
+  function switchTab(tab) {
+    ['analytics', 'menu', 'cashier', 'audit', 'archive'].forEach(t => {
+      const el = document.getElementById(`tab-${t}`);
+      if (el) el.classList.add('hidden');
+      const nav = document.getElementById(`nav-${t}`);
+      if (nav) nav.className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase text-[#888] hover:text-[#f5f5f7]";
+    });
+    
+    document.getElementById(`tab-${tab}`).classList.remove('hidden');
+    const activeNav = document.getElementById(`nav-${tab}`);
+    if (activeNav) activeNav.className = "w-full text-left px-3 py-2 rounded text-xs font-semibold tracking-wider uppercase bg-[#1a1a1a] text-[#c5a059]";
+    
+    if (tab === 'analytics') loadAnalytics();
+    if (tab === 'cashier') loadCashierOrders();
+    if (tab === 'audit') loadAuditLogs();
+  }
 
-    async function switchMenuSubTab(sub) {
-      await fetchMenuData();
-      await fetchIngredientsData();
-      ['add', 'stock', 'margins', 'pricing', 'outstock', 'shopping'].forEach(s => {
-        document.getElementById(`subtab-${s}`).classList.add('hidden');
-        document.getElementById(`subnav-${s}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent";
-      });
-      document.getElementById(`subtab-${sub}`).classList.remove('hidden');
-      document.getElementById(`subnav-${sub}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]";
+  function setFilter(filter) {
+    currentFilter = filter;
+    ['day', 'week', 'month', 'net'].forEach(f => {
+      document.getElementById(`filter-${f}`).className = f === filter ? "px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]" : "px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]";
+    });
+    loadAnalytics();
+  }
 
-      if (sub === 'stock') {
-        const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
-        if (!activeStockCategory || !categories.includes(activeStockCategory)) {
-          activeStockCategory = categories[0] || 'General';
-        }
-        renderStockDashboard();
-      } else if (sub === 'margins') {
-        renderMarginAudit();
-      } else if (sub === 'pricing') {
-        renderPriceOptimizer();
-      } else if (sub === 'outstock') {
-        renderOutStockAudit();
-      } else if (sub === 'shopping') {
-        renderShoppingList();
-      }
-    }
+ async function loadAnalytics() {
+  // Pull ALL paid orders (including archived ones) so Weekly & Monthly P&L stay accurate
+  const { data: orders } = await supabaseClient
+    .from('orders')
+    .select('*')
+    .eq('payment_status', 'PAID');
 
-    function setFilter(filter) {
-      currentFilter = filter;
-      ['day', 'week', 'month', 'net'].forEach(f => {
-        document.getElementById(`filter-${f}`).className = f === filter ? "px-3 py-1 text-[10px] font-bold uppercase rounded bg-[#c5a059] text-[#0a0a0a]" : "px-3 py-1 text-[10px] font-bold uppercase rounded text-[#888]";
-      });
-      loadAnalytics();
-    }
+  const { data: menu } = await supabaseClient.from('menu').select('*');
+  const costMap = {};
+  (menu || []).forEach(m => costMap[m.name] = m.cost || 0);
 
-    async function loadAnalytics() {
-      const { data: orders } = await supabaseClient.from('orders').select('*').eq('payment_status', 'PAID');
-      const { data: menu } = await supabaseClient.from('menu').select('*');
-      const costMap = {};
-      (menu || []).forEach(m => costMap[m.name] = m.cost || 0);
+  let rev = 0, cogs = 0;
+  const dishSales = {};
+  const now = new Date();
 
-      let rev = 0, cogs = 0;
-      let digitalRev = 0, cashRev = 0;
-      const dishSales = {};
-      const now = new Date();
+  (orders || []).forEach(o => {
+    const orderDate = new Date(o.created_at);
+    
+    // Filter based on selected P&L time range
+    if (currentFilter === 'day' && orderDate.toDateString() !== now.toDateString()) return;
+    if (currentFilter === 'week' && (now - orderDate) > 7 * 24 * 60 * 60 * 1000) return;
+    if (currentFilter === 'month' && orderDate.getMonth() !== now.getMonth()) return;
 
-      (orders || []).forEach(o => {
-        const orderDate = new Date(o.created_at);
-        if (currentFilter === 'day' && orderDate.toDateString() !== now.toDateString()) return;
-        if (currentFilter === 'week' && (now - orderDate) > 7 * 24 * 60 * 60 * 1000) return;
-        if (currentFilter === 'month' && orderDate.getMonth() !== now.getMonth()) return;
+    rev += o.total_amount;
+    o.items.forEach(i => {
+      cogs += (costMap[i.name] || 0) * i.qty;
+      if (!dishSales[i.name]) dishSales[i.name] = { qty: 0, rev: 0 };
+      dishSales[i.name].qty += i.qty;
+      dishSales[i.name].rev += i.price * i.qty;
+    });
+  });
 
-        rev += o.total_amount;
-        digitalRev += o.total_amount;
+  const profit = rev - cogs;
+  const margin = rev > 0 ? ((profit / rev) * 100).toFixed(1) : 0;
 
-        o.items.forEach(i => {
-          cogs += (costMap[i.name] || 0) * i.qty;
-          if (!dishSales[i.name]) dishSales[i.name] = { qty: 0, rev: 0 };
-          dishSales[i.name].qty += i.qty;
-          dishSales[i.name].rev += i.price * i.qty;
-        });
-      });
+  // Update KPI Cards
+  document.getElementById('pnl-rev').innerText = `$${rev.toFixed(2)}`;
+  document.getElementById('pnl-cogs').innerText = `$${cogs.toFixed(2)}`;
+  document.getElementById('pnl-profit').innerText = `$${profit.toFixed(2)}`;
+  document.getElementById('pnl-margin').innerText = `${margin}%`;
 
-      const profit = rev - cogs;
-      const margin = rev > 0 ? ((profit / rev) * 100).toFixed(1) : 0;
+  document.getElementById('pay-digital').innerText = `$${rev.toFixed(2)}`;
+  document.getElementById('pay-cash').innerText = `$0.00`;
+  document.getElementById('pay-count').innerText = `${(orders || []).length} Paid Orders`;
 
-      document.getElementById('pnl-rev').innerText = `$${rev.toFixed(2)}`;
-      document.getElementById('pnl-cogs').innerText = `$${cogs.toFixed(2)}`;
-      document.getElementById('pnl-profit').innerText = `$${profit.toFixed(2)}`;
-      document.getElementById('pnl-margin').innerText = `${margin}%`;
+  // Top Selling Dishes
+  const dishTable = document.getElementById('top-dishes-table');
+  const sortedDishes = Object.entries(dishSales).sort((a,b) => b[1].rev - a[1].rev);
+  if (sortedDishes.length === 0) {
+    dishTable.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-[#666]">No paid sales data recorded for this filter.</td></tr>`;
+  } else {
+    dishTable.innerHTML = sortedDishes.map(([name, data]) => `
+      <tr>
+        <td class="py-2.5 font-medium text-[#f5f5f7]">${name}</td>
+        <td class="py-2.5 text-[#888] font-mono">${data.qty}x</td>
+        <td class="py-2.5 text-right font-mono text-[#c5a059]">$${data.rev.toFixed(2)}</td>
+      </tr>
+    `).join('');
+  }
 
-      document.getElementById('pay-digital').innerText = `$${digitalRev.toFixed(2)}`;
-      document.getElementById('pay-cash').innerText = `$${cashRev.toFixed(2)}`;
-      document.getElementById('pay-count').innerText = `${(orders || []).length} Orders`;
+  // Recent Completed Orders Ledger (Only show active unarchived for current daily ledger)
+  const { data: activeOrders } = await supabaseClient
+    .from('orders')
+    .select('*')
+    .is('archived_date', null)
+    .eq('payment_status', 'PAID')
+    .order('created_at', { ascending: false });
 
-      const dishTable = document.getElementById('top-dishes-table');
-      const sortedDishes = Object.entries(dishSales).sort((a,b) => b[1].rev - a[1].rev);
-      if (sortedDishes.length === 0) {
-        dishTable.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-[#666]">No sales data recorded yet.</td></tr>`;
-      } else {
-        dishTable.innerHTML = sortedDishes.map(([name, data]) => `
-          <tr>
-            <td class="py-2.5 font-medium text-[#f5f5f7]">${name}</td>
-            <td class="py-2.5 text-[#888] font-mono">${data.qty}x</td>
-            <td class="py-2.5 text-right font-mono text-[#c5a059]">$${data.rev.toFixed(2)}</td>
-          </tr>
-        `).join('');
-      }
+  const ledger = document.getElementById('completed-orders-ledger');
+  const paidOrders = (activeOrders || []).slice(0, 10);
+  if (paidOrders.length === 0) {
+    ledger.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-[#666]">No active paid orders for today's shift.</td></tr>`;
+  } else {
+    ledger.innerHTML = paidOrders.map(o => `
+      <tr>
+        <td class="py-2.5 font-mono text-[#c5a059]">#${o.id.slice(0,6)}</td>
+        <td class="py-2.5 text-[#f5f5f7]">${o.table_id}</td>
+        <td class="py-2.5 text-[#888]">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
+        <td class="py-2.5 text-[#666] text-[10px]">${new Date(o.created_at).toLocaleTimeString()}</td>
+        <td class="py-2.5 text-right font-mono font-bold text-white">$${o.total_amount.toFixed(2)}</td>
+      </tr>
+    `).join('');
+  }
+}
+  // --- CASHIER DESK: UNPAID/PAID TOGGLE & PRINT BILL ---
+async function loadCashierOrders() {
+  const { data: orders } = await supabaseClient
+    .from('orders')
+    .select('*')
+    .is('archived_date', null)
+    .order('created_at', { ascending: false });
 
-      const ledger = document.getElementById('completed-orders-ledger');
-      const paidOrders = (orders || []).slice(0, 10);
-      if (paidOrders.length === 0) {
-        ledger.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-[#666]">No completed orders.</td></tr>`;
-      } else {
-        ledger.innerHTML = paidOrders.map(o => `
-          <tr>
-            <td class="py-2.5 font-mono text-[#c5a059]">#${o.id.slice(0,6)}</td>
-            <td class="py-2.5 text-[#f5f5f7]">${o.table_id}</td>
-            <td class="py-2.5 text-[#888]">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
-            <td class="py-2.5 text-[#666] text-[10px]">${new Date(o.created_at).toLocaleTimeString()}</td>
-            <td class="py-2.5 text-right font-mono font-bold text-white">$${o.total_amount.toFixed(2)}</td>
-          </tr>
-        `).join('');
-      }
-    }
+  const container = document.getElementById('cashier-orders');
+  if (!orders || orders.length === 0) {
+    container.innerHTML = '<p class="text-xs text-[#666]">No active orders for today.</p>';
+    return;
+  }
 
-    async function addMenuItem(e) {
-      e.preventDefault();
-      const name = document.getElementById('m-name').value;
-      const price = parseFloat(document.getElementById('m-price').value);
-      
-      await supabaseClient.from('menu').insert([{
-        name: name,
-        description: document.getElementById('m-desc').value,
-        category: document.getElementById('m-cat').value,
-        price: price,
-        cost: parseFloat(document.getElementById('m-cost').value),
-        is_available: true
-      }]);
+  container.innerHTML = orders.map(o => {
+    let statusColor = "text-amber-400 border-amber-900 bg-amber-950/30";
+    if (o.status === 'PREPARING') statusColor = "text-blue-400 border-blue-900 bg-blue-950/30";
+    if (o.status === 'SERVED' || o.status === 'COMPLETED') statusColor = "text-emerald-400 border-emerald-900 bg-emerald-950/30";
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        await supabaseClient.from('audit_logs').insert({
-          owner_email: user.email,
-          action_type: 'ADD_MENU_ITEM',
-          target_item: name,
-          details: `Added new dish priced at $${price.toFixed(2)}`
-        });
-      }
+    const isPaid = o.payment_status === 'PAID';
 
-      alert('Dish successfully added to menu database.');
-      e.target.reset();
-      fetchMenuData();
-    }
-
-    function renderStockDashboard() {
-      const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
-      const sidebar = document.getElementById('stock-categories');
-      sidebar.innerHTML = categories.map(cat => `
-        <button onclick="selectStockCategory('${cat}')" class="w-full text-left px-3 py-2 rounded text-xs font-semibold uppercase tracking-wider transition ${cat === activeStockCategory ? 'bg-[#1a1a1a] text-[#c5a059]' : 'text-[#888] hover:text-white'}">
-          ${cat}
-        </button>
-      `).join('');
-
-      const container = document.getElementById('stock-items-container');
-      const filteredItems = globalMenuCache.filter(i => (i.category || 'General') === activeStockCategory);
-
-      if (filteredItems.length === 0) {
-        container.innerHTML = '<p class="text-xs text-[#666] text-center py-10">No items found.</p>';
-        return;
-      }
-
-      container.innerHTML = filteredItems.map(item => `
-        <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
-          <div>
-            <p class="font-medium text-[#f5f5f7]">${item.name}</p>
-            <p class="text-[10px] font-mono text-[#888]">$${item.price.toFixed(2)}</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" ${item.is_available !== false ? 'checked' : ''} onchange="toggleStock('${item.id}', this.checked, '${item.name}')" class="sr-only peer">
-            <div class="w-9 h-5 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c5a059]"></div>
-            <span class="ml-2 text-[10px] font-mono font-bold ${item.is_available !== false ? 'text-emerald-400' : 'text-red-400'}">${item.is_available !== false ? 'IN STOCK' : 'SOLD OUT'}</span>
-          </label>
-        </div>
-      `).join('');
-    }
-
-    function selectStockCategory(cat) {
-      activeStockCategory = cat;
-      renderStockDashboard();
-    }
-
-    async function toggleStock(id, is_available, itemName) {
-      await supabaseClient.from('menu').update({ is_available }).eq('id', id);
-      const item = globalMenuCache.find(i => i.id === id);
-      if (item) item.is_available = is_available;
-
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        await supabaseClient.from('audit_logs').insert({
-          owner_email: user.email,
-          action_type: 'TOGGLE_STOCK',
-          target_item: itemName,
-          details: `Availability changed to: ${is_available ? 'IN STOCK' : 'SOLD OUT'}`
-        });
-      }
-    }
-
-    function renderMarginAudit() {
-      const tbody = document.getElementById('margin-audit-table');
-      if (globalMenuCache.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-[#666]">No menu items found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = globalMenuCache.map(item => {
-        const price = item.price || 0;
-        const cost = item.cost || 0;
-        const profit = price - cost;
-        const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
-        const ratingColor = margin >= 70 ? 'text-emerald-400 bg-emerald-950/40 border-emerald-900' : margin >= 50 ? 'text-blue-400 bg-blue-950/40 border-blue-900' : 'text-amber-400 bg-amber-950/40 border-amber-900';
-        const ratingText = margin >= 70 ? 'EXCELLENT' : margin >= 50 ? 'GOOD' : 'LOW';
-
-        return `
-          <tr>
-            <td class="py-3 font-medium text-[#f5f5f7]">${item.name}</td>
-            <td class="py-3 text-[#888]">${item.category || 'General'}</td>
-            <td class="py-3 font-mono text-[#c5a059]">$${price.toFixed(2)}</td>
-            <td class="py-3 font-mono text-red-400">$${cost.toFixed(2)}</td>
-            <td class="py-3 font-mono font-bold text-white">${margin}%</td>
-            <td class="py-3"><span class="px-2 py-0.5 rounded text-[9px] font-bold border ${ratingColor}">${ratingText}</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderPriceOptimizer() {
-      const container = document.getElementById('price-optimizer-list');
-      if (globalMenuCache.length === 0) {
-        container.innerHTML = `<p class="text-xs text-[#666] text-center py-4">No menu items found.</p>`;
-        return;
-      }
-
-      container.innerHTML = globalMenuCache.map(item => `
-        <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
-          <div>
-            <p class="font-bold text-[#f5f5f7]">${item.name}</p>
-            <p class="text-[10px] text-[#888]">Category: ${item.category || 'General'}</p>
-          </div>
+    return `
+      <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center text-xs">
+        <div>
           <div class="flex items-center space-x-3">
-            <div>
-              <label class="block text-[9px] text-[#888] uppercase">Price ($)</label>
-              <input type="number" step="0.01" value="${item.price}" id="price-${item.id}" class="w-20 bg-[#121212] border border-[#333] p-1.5 rounded text-white font-mono text-xs">
-            </div>
-            <div>
-              <label class="block text-[9px] text-[#888] uppercase">COGS ($)</label>
-              <input type="number" step="0.01" value="${item.cost || 0}" id="cost-${item.id}" class="w-20 bg-[#121212] border border-[#333] p-1.5 rounded text-white font-mono text-xs">
-            </div>
-            <button onclick="updateItemPricing('${item.id}', '${item.name}')" class="mt-4 bg-[#c5a059] hover:bg-[#b08d48] text-[#0a0a0a] font-bold px-3 py-1.5 rounded text-xs uppercase">Save</button>
+            <span class="text-[#c5a059] font-bold font-mono">#${o.id.slice(0,6)}</span>
+            <span class="bg-[#1a1a1a] border border-[#333] text-[#ccc] px-2 py-0.5 rounded font-mono text-[11px]">${o.table_id}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${statusColor}">
+              STATUS: ${o.status || 'NEW'}
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${isPaid ? 'text-emerald-400 border-emerald-900 bg-emerald-950/30' : 'text-red-400 border-red-900 bg-red-950/30'}">
+              PAYMENT: ${o.payment_status || 'UNPAID'}
+            </span>
           </div>
+          <p class="text-[#aaa] mt-2 font-medium">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
+          <p class="text-[10px] text-[#666] mt-1 font-mono">Ordered at: ${new Date(o.created_at).toLocaleTimeString()}</p>
         </div>
-      `).join('');
-    }
+        <div class="text-right flex items-center space-x-3">
+          <span class="font-mono font-bold text-sm text-white">$${o.total_amount.toFixed(2)}</span>
+          
+          ${!isPaid ? `
+            <button onclick="markOrderPaid('${o.id}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 hover:bg-emerald-900/40 px-3 py-2 rounded font-bold transition">
+              MARK PAID
+            </button>
+          ` : ''}
 
-    async function updateItemPricing(id, itemName) {
-      const newPrice = parseFloat(document.getElementById(`price-${id}`).value);
-      const newCost = parseFloat(document.getElementById(`cost-${id}`).value);
-      
-      const { error } = await supabaseClient.from('menu').update({ price: newPrice, cost: newCost }).eq('id', id);
-      if (error) {
-        alert('Error updating price: ' + error.message);
-      } else {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (user) {
-          await supabaseClient.from('audit_logs').insert({
-            owner_email: user.email,
-            action_type: 'UPDATE_PRICING',
-            target_item: itemName,
-            details: `Updated price to $${newPrice.toFixed(2)} and COGS to $${newCost.toFixed(2)}`
-          });
-        }
-        alert('Item pricing updated successfully.');
-        fetchMenuData();
-      }
-    }
-
-    function renderOutStockAudit() {
-      const outOfStockItems = globalMenuCache.filter(i => i.is_available === false);
-      document.getElementById('outstock-count').innerText = `${outOfStockItems.length} Items Unavailable`;
-      const container = document.getElementById('outstock-audit-list');
-
-      if (outOfStockItems.length === 0) {
-        container.innerHTML = `<p class="text-xs text-[#666] text-center py-6">All menu items are currently in stock and available.</p>`;
-        return;
-      }
-
-      container.innerHTML = outOfStockItems.map(item => `
-        <div class="bg-[#0a0a0a] border border-red-900/40 p-3 rounded flex justify-between items-center text-xs">
-          <div>
-            <p class="font-bold text-red-400">${item.name}</p>
-            <p class="text-[10px] text-[#888]">Category: ${item.category || 'General'} | Price: $${item.price.toFixed(2)}</p>
-          </div>
-          <button onclick="restoreStockFromAudit('${item.id}', '${item.name}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 font-bold px-3 py-1.5 rounded text-[10px] uppercase">RESTOCK ITEM</button>
+          <button onclick='printReceipt(${JSON.stringify(o)})' class="border border-[#333] hover:border-[#c5a059] px-3.5 py-2 rounded text-[#aaa] hover:text-[#c5a059] font-bold transition flex items-center space-x-1.5">
+            <span>🖨️</span>
+            <span>PRINT BILL</span>
+          </button>
         </div>
-      `).join('');
+      </div>
+    `;
+  }).join('');
+}
+
+async function markOrderPaid(orderId) {
+  const { error } = await supabaseClient
+    .from('orders')
+    .update({ payment_status: 'PAID' })
+    .eq('id', orderId);
+
+  if (error) {
+    alert('Failed to update payment: ' + error.message);
+  } else {
+    logAuditAction('Manual Counter Payment', `Order #${orderId.slice(0,6)} marked as PAID`);
+    loadCashierOrders();
+    loadAnalytics();
+  }
+}
+
+  function printReceipt(order) {
+    const receiptDiv = document.getElementById('printable-receipt');
+    receiptDiv.innerHTML = `
+      <div style="text-align: center; margin-bottom: 10px;">
+        <h3>RESTOOS LUXURY DINING</h3>
+        <p>Table: ${order.table_id}</p>
+        <p>Order ID: ${order.id.slice(0,8)}</p>
+        <p>${new Date(order.created_at).toLocaleString()}</p>
+      </div>
+      <hr style="border-top: dashed 1px #000;" />
+      <ul style="list-style: none; padding: 0;">
+        ${order.items.map(i => `<li style="display: flex; justify-content: space-between;"><span>${i.qty}x ${i.name}</span><span>$${(i.price * i.qty).toFixed(2)}</span></li>`).join('')}
+      </ul>
+      <hr style="border-top: dashed 1px #000;" />
+      <p style="text-align: right; font-weight: bold;">TOTAL: $${order.total_amount.toFixed(2)}</p>
+      <p style="text-align: center; margin-top: 15px;">Thank you for your visit.</p>
+    `;
+    window.print();
+  }
+
+  async function storeAndCloseShift() {
+    if (!confirm("Store and close today's shift? This will archive today's orders into the sidebar history ledger and clear the active cashier view for a fresh day.")) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data: activeOrders } = await supabaseClient.from('orders').select('id').is('archived_date', null);
+    if (activeOrders && activeOrders.length > 0) {
+      for (const o of activeOrders) {
+        await supabaseClient.from('orders').update({ archived_date: todayStr }).eq('id', o.id);
+      }
     }
 
-    async function restoreStockFromAudit(id, itemName) {
-      await supabaseClient.from('menu').update({ is_available: true }).eq('id', id);
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        await supabaseClient.from('audit_logs').insert({
-          owner_email: user.email,
-          action_type: 'RESTOCK_ITEM',
-          target_item: itemName,
-          details: `Restocked item back to IN STOCK`
-        });
+    logAuditAction('Shift Closed & Stored', `Date: ${todayStr}`);
+    alert(`Shift successfully stored under date: ${todayStr}`);
+    loadHistorySidebar();
+    loadCashierOrders();
+    loadAnalytics();
+  }
+
+  async function loadHistorySidebar() {
+    const { data: orders } = await supabaseClient.from('orders').select('archived_date').not('archived_date', 'is', null);
+    const listContainer = document.getElementById('sidebar-history-list');
+    
+    if (!orders || orders.length === 0) {
+      listContainer.innerHTML = '<p class="text-[10px] text-[#555]">No stored past shifts yet.</p>';
+      return;
+    }
+
+    const dates = [...new Set(orders.map(o => o.archived_date))].sort().reverse();
+    listContainer.innerHTML = dates.map(date => `
+      <button onclick="viewArchive('${date}')" class="w-full text-left px-2.5 py-1.5 rounded text-[11px] font-mono text-[#aaa] hover:bg-[#1a1a1a] hover:text-[#c5a059] flex justify-between items-center">
+        <span>📅 ${date}</span>
+        <span class="text-[9px] text-[#666]">VIEW</span>
+      </button>
+    `).join('');
+  }
+
+  async function viewArchive(dateStr) {
+    switchTab('archive');
+    document.getElementById('archive-title').innerText = `Historical Archive — ${dateStr}`;
+    const { data: orders } = await supabaseClient.from('orders').select('*').eq('archived_date', dateStr);
+    const container = document.getElementById('archive-orders-container');
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `<p class="text-xs text-[#666]">No orders found for ${dateStr}.</p>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => `
+      <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center text-xs">
+        <div>
+          <span class="text-[#c5a059] font-bold">#${o.id.slice(0,6)}</span> (${o.table_id})
+          <p class="text-[#888] mt-1">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
+        </div>
+        <div class="text-right flex items-center space-x-3">
+          <span class="font-mono font-bold">$${o.total_amount.toFixed(2)}</span>
+          <button onclick='printReceipt(${JSON.stringify(o)})' class="border border-[#333] px-2.5 py-1.5 rounded text-[#aaa]">🖨️ PRINT BILL</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function loadAuditLogs() {
+    const { data: logs } = await supabaseClient.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(50);
+    const container = document.getElementById('audit-logs-container');
+    if (!logs || logs.length === 0) {
+      container.innerHTML = '<p class="text-[#666]">No audit events logged.</p>';
+      return;
+    }
+    container.innerHTML = logs.map(l => `
+      <div class="bg-[#0a0a0a] border border-[#222] p-2.5 rounded flex justify-between">
+        <div><span class="text-[#c5a059] font-bold">[${l.action}]</span> <span class="text-[#ddd]">${l.details || ''}</span></div>
+        <span class="text-[10px] text-[#666]">${new Date(l.timestamp).toLocaleString()}</span>
+      </div>
+    `).join('');
+  }
+
+  async function switchMenuSubTab(sub) {
+    await fetchMenuData();
+    await fetchIngredientsData();
+    ['add', 'stock', 'margins', 'pricing', 'outstock', 'shopping'].forEach(s => {
+      document.getElementById(`subtab-${s}`).classList.add('hidden');
+      document.getElementById(`subnav-${s}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white border border-transparent";
+    });
+    document.getElementById(`subtab-${sub}`).classList.remove('hidden');
+    document.getElementById(`subnav-${sub}`).className = "px-3 py-2 rounded text-xs font-bold uppercase tracking-wider bg-[#1a1a1a] text-[#c5a059] border border-[#333]";
+
+    if (sub === 'stock') {
+      const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
+      if (!activeStockCategory || !categories.includes(activeStockCategory)) {
+        activeStockCategory = categories[0] || 'General';
       }
-      await fetchMenuData();
+      renderStockDashboard();
+    } else if (sub === 'margins') {
+      renderMarginAudit();
+    } else if (sub === 'pricing') {
+      renderPriceOptimizer();
+    } else if (sub === 'outstock') {
       renderOutStockAudit();
-    }
-
-    function openAddIngredientModal() {
-      document.getElementById('add-ingredient-modal').classList.toggle('hidden');
-    }
-
-    async function saveNewIngredient(e) {
-      e.preventDefault();
-      const ingName = document.getElementById('ing-name').value;
-      await supabaseClient.from('ingredients').insert([{
-        name: ingName,
-        category: document.getElementById('ing-cat').value,
-        is_in_stock: true
-      }]);
-
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        await supabaseClient.from('audit_logs').insert({
-          owner_email: user.email,
-          action_type: 'ADD_INGREDIENT',
-          target_item: ingName,
-          details: `Added raw inventory ingredient`
-        });
-      }
-
-      alert('Raw ingredient added to inventory catalog.');
-      e.target.reset();
-      openAddIngredientModal();
-      await fetchIngredientsData();
+    } else if (sub === 'shopping') {
       renderShoppingList();
     }
+  }
 
-    function renderShoppingList() {
-      const container = document.getElementById('shopping-list-container');
-      if (globalIngredientsCache.length === 0) {
-        container.innerHTML = `<p class="text-xs text-[#666] text-center py-6">No raw ingredients added to inventory yet.</p>`;
-        return;
-      }
+  async function addMenuItem(e) {
+    e.preventDefault();
+    await supabaseClient.from('menu').insert([{
+      name: document.getElementById('m-name').value,
+      description: document.getElementById('m-desc').value,
+      category: document.getElementById('m-cat').value,
+      price: parseFloat(document.getElementById('m-price').value),
+      cost: parseFloat(document.getElementById('m-cost').value),
+      is_available: true
+    }]);
+    alert('Dish successfully added.');
+    e.target.reset();
+    fetchMenuData();
+  }
 
-      container.innerHTML = globalIngredientsCache.map(ing => `
-        <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
-          <div>
-            <p class="font-bold text-[#f5f5f7]">${ing.name}</p>
-            <p class="text-[10px] text-[#888]">Category / Supplier: ${ing.category || 'General'}</p>
-          </div>
-          <span class="px-2.5 py-1 rounded text-[10px] font-bold font-mono ${ing.is_in_stock !== false ? 'bg-emerald-950/40 border border-emerald-900 text-emerald-400' : 'bg-red-950/40 border border-red-900 text-red-400'}">
-            ${ing.is_in_stock !== false ? 'IN STOCK' : 'NEEDED / OUT OF STOCK'}
-          </span>
+  function renderStockDashboard() {
+    const categories = [...new Set(globalMenuCache.map(i => i.category || 'General'))];
+    const sidebar = document.getElementById('stock-categories');
+    sidebar.innerHTML = categories.map(cat => `
+      <button onclick="selectStockCategory('${cat}')" class="w-full text-left px-3 py-2 rounded text-xs font-semibold uppercase tracking-wider transition ${cat === activeStockCategory ? 'bg-[#1a1a1a] text-[#c5a059]' : 'text-[#888] hover:text-white'}">
+        ${cat}
+      </button>
+    `).join('');
+
+    const container = document.getElementById('stock-items-container');
+    const filteredItems = globalMenuCache.filter(i => (i.category || 'General') === activeStockCategory);
+    container.innerHTML = filteredItems.map(item => `
+      <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
+        <div><p class="font-medium text-[#f5f5f7]">${item.name}</p><p class="text-[10px] font-mono text-[#888]">$${item.price.toFixed(2)}</p></div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" ${item.is_available !== false ? 'checked' : ''} onchange="toggleStock('${item.id}', this.checked)" class="sr-only peer">
+          <div class="w-9 h-5 bg-[#222] rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c5a059]"></div>
+          <span class="ml-2 text-[10px] font-mono font-bold ${item.is_available !== false ? 'text-emerald-400' : 'text-red-400'}">${item.is_available !== false ? 'IN STOCK' : 'SOLD OUT'}</span>
+        </label>
+      </div>
+    `).join('');
+  }
+
+  function selectStockCategory(cat) {
+    activeStockCategory = cat;
+    renderStockDashboard();
+  }
+
+  async function toggleStock(id, is_available) {
+    await supabaseClient.from('menu').update({ is_available }).eq('id', id);
+  }
+
+  function renderMarginAudit() {
+    const tbody = document.getElementById('margin-audit-table');
+    tbody.innerHTML = globalMenuCache.map(item => {
+      const profit = (item.price || 0) - (item.cost || 0);
+      const margin = item.price > 0 ? ((profit / item.price) * 100).toFixed(1) : 0;
+      return `<tr><td class="py-3">${item.name}</td><td class="py-3">${item.category || 'General'}</td><td class="py-3">$${item.price.toFixed(2)}</td><td class="py-3">$${(item.cost || 0).toFixed(2)}</td><td class="py-3 font-bold">${margin}%</td><td class="py-3"><span class="px-2 py-0.5 rounded text-[9px] font-bold border ${margin >= 50 ? 'text-emerald-400 border-emerald-900' : 'text-amber-400 border-amber-900'}">${margin >= 50 ? 'GOOD' : 'LOW'}</span></td></tr>`;
+    }).join('');
+  }
+
+  function renderPriceOptimizer() {
+    const container = document.getElementById('price-optimizer-list');
+    container.innerHTML = globalMenuCache.map(item => `
+      <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded flex justify-between items-center text-xs">
+        <p class="font-bold text-[#f5f5f7]">${item.name}</p>
+        <div class="flex items-center space-x-3">
+          <input type="number" step="0.01" value="${item.price}" id="price-${item.id}" class="w-20 bg-[#121212] border border-[#333] p-1.5 rounded text-white font-mono text-xs">
+          <button onclick="updateItemPricing('${item.id}')" class="bg-[#c5a059] text-[#0a0a0a] font-bold px-3 py-1.5 rounded text-xs uppercase">Save</button>
         </div>
-      `).join('');
-    }
+      </div>
+    `).join('');
+  }
 
-    async function loadCashierOrders() {
-      const { data: orders } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
-      const container = document.getElementById('cashier-orders');
-      const unfulfilled = (orders || []).filter(o => o.status !== 'COMPLETED');
+  async function updateItemPricing(id) {
+    const newPrice = parseFloat(document.getElementById(`price-${id}`).value);
+    await supabaseClient.from('menu').update({ price: newPrice }).eq('id', id);
+    alert('Price updated.');
+    fetchMenuData();
+  }
 
-      if (unfulfilled.length === 0) {
-        container.innerHTML = `<div class="bg-[#121212] border border-[#222] p-8 rounded text-center text-xs text-[#666]">No active unfulfilled orders in queue.</div>`;
-        return;
-      }
+  function renderOutStockAudit() {
+    const items = globalMenuCache.filter(i => i.is_available === false);
+    document.getElementById('outstock-count').innerText = `${items.length} Items Unavailable`;
+    document.getElementById('outstock-audit-list').innerHTML = items.length === 0 ? '<p class="text-xs text-[#666]">All menu items in stock.</p>' : items.map(i => `
+      <div class="bg-[#0a0a0a] border border-red-900/40 p-3 rounded flex justify-between items-center text-xs">
+        <span class="text-red-400 font-bold">${i.name}</span>
+        <button onclick="restoreStock('${i.id}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 px-3 py-1.5 rounded text-[10px]">RESTOCK</button>
+      </div>
+    `).join('');
+  }
 
-      container.innerHTML = unfulfilled.map(o => `
-        <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center text-xs">
-          <div class="space-y-1">
-            <div class="flex items-center space-x-2">
-              <span class="font-mono font-bold text-[#c5a059]">#${o.id.slice(0,6)}</span>
-              <span class="bg-[#1a1a1a] text-white px-2 py-0.5 rounded text-[10px]">${o.table_id}</span>
-              <span class="text-[10px] font-mono ${o.payment_status === 'PAID' ? 'text-emerald-400' : 'text-amber-400'}">PAYMENT: ${o.payment_status || 'PENDING'}</span>
-            </div>
-            <p class="text-white">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
-            <p class="text-[10px] text-[#888]">Total: $${o.total_amount.toFixed(2)} | Ordered at: ${new Date(o.created_at).toLocaleTimeString()}</p>
-          </div>
-          <div class="flex items-center space-x-2">
-            ${o.payment_status !== 'PAID' ? `<button onclick="markOrderPaid('${o.id}')" class="bg-amber-950/40 border border-amber-900 text-amber-400 font-bold px-3 py-2 rounded text-[10px] uppercase">Mark Paid ($${o.total_amount.toFixed(2)})</button>` : ''}
-            <button onclick="completeOrder('${o.id}')" class="bg-[#c5a059] text-[#0a0a0a] font-bold px-3 py-2 rounded text-[10px] uppercase tracking-wider">Complete Order</button>
-          </div>
-        </div>
-      `).join('');
-    }
+  async function restoreStock(id) {
+    await supabaseClient.from('menu').update({ is_available: true }).eq('id', id);
+    await fetchMenuData();
+    renderOutStockAudit();
+  }
 
-    async function markOrderPaid(id) {
-      const { error } = await supabaseClient.from('orders').update({ payment_status: 'PAID' }).eq('id', id);
-      if (error) alert('Error updating payment: ' + error.message);
-      loadCashierOrders();
-    }
+  function openAddIngredientModal() {
+    document.getElementById('add-ingredient-modal').classList.toggle('hidden');
+  }
 
-    async function completeOrder(id) {
-      const { error } = await supabaseClient.from('orders').update({ status: 'COMPLETED' }).eq('id', id);
-      if (error) alert('Error completing order: ' + error.message);
-      loadCashierOrders();
-    }
+  async function saveNewIngredient(e) {
+    e.preventDefault();
+    await supabaseClient.from('ingredients').insert([{ name: document.getElementById('ing-name').value, category: document.getElementById('ing-cat').value, is_in_stock: true }]);
+    alert('Ingredient added.');
+    e.target.reset();
+    openAddIngredientModal();
+    fetchIngredientsData();
+  }
 
-    async function loadAuditLogs() {
-      const auditTable = document.getElementById('audit-logs-table');
-      const { data, error } = await supabaseClient
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
+  function renderShoppingList() {
+    const shortages = globalIngredientsCache.filter(i => i.is_in_stock === false);
+    document.getElementById('shopping-list-container').innerHTML = shortages.length === 0 ? '<p class="text-xs text-[#666]">No raw ingredient shortages.</p>' : shortages.map(ing => `
+      <div class="bg-[#0a0a0a] border border-red-900/40 p-3 rounded flex justify-between items-center text-xs">
+        <span class="text-red-400 font-bold">🛒 Buy: ${ing.name}</span>
+        <button onclick="restockIng('${ing.id}')" class="bg-emerald-950/40 border border-emerald-900 text-emerald-400 px-3 py-1.5 rounded text-[10px]">RESTOCKED</button>
+      </div>
+    `).join('');
+  }
 
-      if (error || !data || data.length === 0) {
-        auditTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-[#666]">No audit records found yet.</td></tr>`;
-        return;
-      }
+  async function restockIng(id) {
+    await supabaseClient.from('ingredients').update({ is_in_stock: true }).eq('id', id);
+    await fetchIngredientsData();
+    renderShoppingList();
+  }
 
-      auditTable.innerHTML = data.map(log => `
-        <tr>
-          <td class="py-3 text-[#888] font-mono text-[10px]">${new Date(log.created_at).toLocaleString()}</td>
-          <td class="py-3 text-white font-medium">${log.owner_email}</td>
-          <td class="py-3 text-[#c5a059] font-mono">${log.action_type}</td>
-          <td class="py-3 text-[#ccc]">${log.target_item} — ${log.details}</td>
-        </tr>
-      `).join('');
-    }
+  function printShiftReport() {
+    window.print();
+  }
+  
+  function printArchiveReport() {
+    window.print();
+  }
 
-    function printShiftReport() {
-      const printable = document.getElementById('printable-receipt');
-      printable.innerHTML = `
-        <div style="font-family: monospace; font-size: 12px; line-height: 1.4;">
-          <h3 style="text-align:center; margin-bottom: 5px;">RESTOOS SHIFT REPORT</h3>
-          <p style="text-align:center; font-size: 10px; margin-bottom: 15px;">Generated: ${new Date().toLocaleString()}</p>
-          <hr style="border: dashed 1px #000; margin-bottom: 10px;" />
-          <p><strong>Status:</strong> Completed Shift Summary</p>
-          <p><strong>Portal:</strong> Executive & Cashier Desk</p>
-          <hr style="border: dashed 1px #000; margin-top: 10px; margin-bottom: 10px;" />
-          <p style="text-align:center; font-size: 10px;">End of Report</p>
-        </div>
-      `;
-      window.print();
-    }
-
-    // Initialize session check on application boot
-    checkAuthSession();
-  </script>
+  initDashboard();
+</script>
 </body>
 </html>

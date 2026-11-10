@@ -2,99 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RestoOS — Luxury Dining Menu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-[#0a0a0a] text-[#f5f5f7] font-sans min-h-screen pb-32">
+<body class="bg-[#0a0a0a] text-[#f5f5f7] font-sans min-h-screen p-6">
 
-  <!-- Header -->
-  <header class="bg-[#121212]/90 backdrop-blur border-b border-[#222] p-4 sticky top-0 z-40 flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <span class="text-[#c5a059] text-xl">◆</span>
-      <h1 class="font-bold tracking-widest text-sm uppercase text-[#f5f5f7]">RestoOS</h1>
-    </div>
-    <div class="flex items-center space-x-3">
-      <div class="bg-[#1a1a1a] border border-[#333] px-3 py-1 rounded text-xs text-[#c5a059] font-mono">
-        TABLE: <span id="table-display">--</span>
-      </div>
-      <button onclick="openLiveTracker()" class="bg-[#222] hover:bg-[#333] border border-[#333] text-xs px-3 py-1 rounded text-[#ccc]">TRACK ORDER</button>
-    </div>
-  </header>
-
-  <!-- Category Filter Bar -->
-  <nav id="category-filters" class="flex overflow-x-auto space-x-2 px-4 py-3 bg-[#121212] border-b border-[#222] no-scrollbar">
-    <button onclick="filterCategory('ALL')" class="cat-btn bg-[#c5a059] text-[#0a0a0a] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap">All Items</button>
-  </nav>
-
-  <!-- Main Menu Grid -->
-  <main class="max-w-xl mx-auto p-4 space-y-4">
-    <div id="menu-container" class="space-y-3">
-      <div class="text-center py-20 text-[#666]">
-        <p class="text-xs tracking-widest uppercase">Curating Menu Experience...</p>
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center border-b border-[#222] pb-4">
+      <h1 class="text-sm font-bold tracking-widest text-[#c5a059] uppercase">RestoOS Luxury Dining</h1>
+      <div class="flex items-center space-x-3">
+        <span id="table-display" class="text-xs font-mono bg-[#121212] border border-[#222] px-3 py-1.5 rounded text-[#aaa]">Table: Loading...</span>
+        <button onclick="openTracker()" class="bg-[#121212] border border-[#333] hover:border-[#c5a059] text-xs font-bold px-4 py-1.5 rounded uppercase tracking-wider text-[#f5f5f7]">Track Orders</button>
       </div>
     </div>
-  </main>
 
-  <!-- Floating Cart Bar -->
-  <div id="cart-bar" class="hidden fixed bottom-0 inset-x-0 bg-[#121212] border-t border-[#222] p-4 z-50 shadow-2xl">
-    <div class="max-w-xl mx-auto flex justify-between items-center">
+    <!-- Menu Grid -->
+    <div id="menu-container" class="grid grid-cols-2 gap-4">
+      <p class="text-xs text-[#666]">Loading menu catalog...</p>
+    </div>
+
+    <!-- Cart Summary Bar -->
+    <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center">
       <div>
-        <p class="text-[10px] uppercase tracking-widest text-[#888]">Current Selection</p>
-        <p id="cart-summary-text" class="text-sm font-bold text-[#f5f5f7] mt-0.5">0 items — $0.00</p>
+        <p class="text-[10px] uppercase tracking-widest text-[#888]">Current Cart Total</p>
+        <p id="cart-total" class="text-lg font-mono font-bold text-[#c5a059]">$0.00</p>
       </div>
-      <button onclick="openCheckoutModal()" class="bg-[#c5a059] hover:bg-[#b08d48] text-[#0a0a0a] text-xs font-bold px-6 py-3 rounded uppercase tracking-widest transition">Review Order</button>
+      <button onclick="placeOrder()" class="bg-[#c5a059] text-[#0a0a0a] text-xs font-bold px-6 py-2.5 rounded uppercase tracking-wider transition hover:bg-[#b08d48]">Place Order</button>
     </div>
   </div>
 
-  <!-- Item Details / Customization Modal -->
-  <div id="item-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-[#121212] border border-[#222] w-full max-w-md p-6 rounded-lg space-y-4">
-      <div class="flex justify-between items-start">
-        <div>
-          <span id="modal-item-cat" class="text-[10px] uppercase tracking-widest text-[#c5a059]"></span>
-          <h3 id="modal-item-name" class="text-lg font-bold text-[#f5f5f7]"></h3>
-        </div>
-        <button onclick="closeItemModal()" class="text-[#888] hover:text-white">✕</button>
-      </div>
-      <p id="modal-item-desc" class="text-xs text-[#888]"></p>
-      <div>
-        <label class="block text-[10px] uppercase tracking-widest text-[#888] mb-1">Special Instructions / Preferences</label>
-        <input id="modal-notes" type="text" placeholder="e.g. No onions, dressing on the side" class="w-full bg-[#0a0a0a] border border-[#333] p-2.5 text-xs rounded text-white focus:outline-none focus:border-[#c5a059]">
-      </div>
-      <div class="flex justify-between items-center pt-2">
-        <span id="modal-item-price" class="text-base font-mono font-bold text-[#c5a059]"></span>
-        <button onclick="confirmAddToCart()" class="bg-[#c5a059] text-[#0a0a0a] text-xs font-bold px-5 py-2.5 rounded uppercase tracking-wider">Add to Cart</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Checkout Review Modal -->
-  <div id="checkout-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-[#121212] border border-[#222] w-full max-w-md p-6 rounded-lg space-y-4">
+  <!-- Customer Order Tracker Modal (Session-Filtered) -->
+  <div id="tracker-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#121212] border border-[#222] w-full max-w-lg p-6 rounded-lg space-y-4 max-h-[80vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-[#222] pb-3">
-        <h3 class="text-sm font-bold tracking-widest text-[#c5a059] uppercase">Review Table Order</h3>
-        <button onclick="closeCheckoutModal()" class="text-[#888]">✕</button>
+        <h3 class="text-xs font-bold tracking-widest text-[#c5a059] uppercase">Your Session Order History</h3>
+        <button onclick="openTracker()" class="text-[#888] hover:text-white">✕</button>
       </div>
-      <div id="checkout-items-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
-      <div class="border-t border-[#222] pt-3 flex justify-between items-center font-mono text-sm">
-        <span class="text-[#888]">Total Amount:</span>
-        <span id="checkout-total" class="font-bold text-[#c5a059]">$0.00</span>
-      </div>
-      <button onclick="submitOrder()" class="w-full bg-[#c5a059] text-[#0a0a0a] text-xs font-bold py-3 rounded uppercase tracking-widest">Submit Order to Kitchen</button>
-    </div>
-  </div>
-
-  <!-- Live Order Tracker Modal -->
-  <div id="tracker-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-[#121212] border border-[#222] w-full max-w-md p-6 rounded-lg space-y-4">
-      <div class="flex justify-between items-center border-b border-[#222] pb-3">
-        <h3 class="text-sm font-bold tracking-widest text-[#c5a059] uppercase">Live Table Orders</h3>
-        <button onclick="closeLiveTracker()" class="text-[#888]">✕</button>
-      </div>
-      <div id="tracker-orders-list" class="space-y-3 max-h-80 overflow-y-auto">
-        <p class="text-xs text-[#666]">No active orders found for this table.</p>
+      <div id="order-tracker-list" class="space-y-3">
+        <p class="text-xs text-[#666]">No active orders for this session.</p>
       </div>
     </div>
   </div>
@@ -104,186 +51,119 @@
     const SUPABASE_KEY = 'sb_publishable_Dpdbob-sDqzyKiA5NS3_dA_DkchtJdu';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const tableId = urlParams.get('table') || 'Table-1';
-    document.getElementById('table-display').innerText = tableId;
+    // --- UNIQUE CUSTOMER SESSION INITIALIZATION ---
+    let customerSessionId = localStorage.getItem('resto_session_id');
+    if (!customerSessionId) {
+      customerSessionId = 'sess_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+      localStorage.setItem('resto_session_id', customerSessionId);
+    }
 
-    let menuCache = [];
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableId = urlParams.get('table') || 'Table-4';
+    document.getElementById('table-display').innerText = `Table: ${tableId}`;
+
     let cart = [];
-    let currentCategory = 'ALL';
-    let selectedItemForModal = null;
+    let menuCache = [];
 
     async function loadMenu() {
-      const { data: menu, error } = await supabaseClient.from('menu').select('*');
-      if (error) return console.error(error);
+      const { data: menu } = await supabaseClient.from('menu').select('*').eq('is_available', true);
       menuCache = menu || [];
-      renderCategories();
-      renderMenu();
-    }
-
-    function renderCategories() {
-      const categories = ['ALL', ...new Set(menuCache.map(i => i.category))];
-      const nav = document.getElementById('category-filters');
-      nav.innerHTML = categories.map(cat => `
-        <button onclick="filterCategory('${cat}')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition ${cat === currentCategory ? 'bg-[#c5a059] text-[#0a0a0a]' : 'bg-[#1a1a1a] text-[#888] hover:text-white'}">${cat}</button>
-      `).join('');
-    }
-
-    function filterCategory(cat) {
-      currentCategory = cat;
-      renderCategories();
-      renderMenu();
-    }
-
-    function renderMenu() {
       const container = document.getElementById('menu-container');
-      const filtered = currentCategory === 'ALL' ? menuCache : menuCache.filter(i => i.category === currentCategory);
 
-      if (filtered.length === 0) {
-        container.innerHTML = `<div class="text-center py-16 text-[#666]"><p class="text-xs uppercase tracking-widest">No dishes available</p></div>`;
+      if (menuCache.length === 0) {
+        container.innerHTML = '<p class="text-xs text-[#666]">No menu items available right now.</p>';
         return;
       }
 
-      container.innerHTML = filtered.map(item => `
-        <div class="bg-[#121212] border border-[#222] p-4 rounded-lg flex justify-between items-center transition ${item.is_available === false ? 'opacity-40 pointer-events-none' : 'hover:border-[#333]'}" onclick="openItemModal('${item.id}')">
-          <div class="space-y-1 pr-4">
-            <span class="text-[9px] uppercase tracking-widest text-[#c5a059] font-semibold">${item.category}</span>
-            <h3 class="font-medium text-sm text-[#f5f5f7]">${item.name}</h3>
-            <p class="text-xs text-[#888] line-clamp-2">${item.description || 'Prepared fresh with high-end ingredients.'}</p>
-            <p class="text-xs font-mono font-bold text-[#c5a059] pt-1">$${item.price.toFixed(2)}</p>
-          </div>
+      container.innerHTML = menuCache.map(item => `
+        <div class="bg-[#121212] border border-[#222] p-4 rounded flex justify-between items-center">
           <div>
-            ${item.is_available !== false 
-              ? `<button class="bg-[#1a1a1a] border border-[#333] hover:border-[#c5a059] text-[#c5a059] p-2.5 rounded-lg text-xs font-bold">+</button>`
-              : `<span class="text-[9px] text-red-400 border border-red-900/50 bg-red-950/20 px-2 py-1 rounded">SOLD OUT</span>`
-            }
+            <p class="font-bold text-xs text-[#f5f5f7]">${item.name}</p>
+            <p class="text-[10px] text-[#888] mt-0.5">${item.description || ''}</p>
+            <p class="font-mono text-xs text-[#c5a059] mt-2">$${item.price.toFixed(2)}</p>
           </div>
+          <button onclick="addToCart('${item.id}')" class="border border-[#333] hover:border-[#c5a059] text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wider text-[#f5f5f7]">+ Add</button>
         </div>
       `).join('');
     }
 
-    function openItemModal(id) {
-      selectedItemForModal = menuCache.find(i => i.id === id);
-      if (!selectedItemForModal) return;
-      document.getElementById('modal-item-cat').innerText = selectedItemForModal.category;
-      document.getElementById('modal-item-name').innerText = selectedItemForModal.name;
-      document.getElementById('modal-item-desc').innerText = selectedItemForModal.description || '';
-      document.getElementById('modal-item-price').innerText = `$${selectedItemForModal.price.toFixed(2)}`;
-      document.getElementById('modal-notes').value = '';
-      document.getElementById('item-modal').classList.remove('hidden');
-    }
-
-    function closeItemModal() {
-      document.getElementById('item-modal').classList.add('hidden');
-      selectedItemForModal = null;
-    }
-
-    function confirmAddToCart() {
-      if (!selectedItemForModal) return;
-      const notes = document.getElementById('modal-notes').value;
-      cart.push({
-        id: selectedItemForModal.id,
-        name: selectedItemForModal.name,
-        price: selectedItemForModal.price,
-        notes: notes,
-        qty: 1
-      });
-      closeItemModal();
-      updateCartBar();
-    }
-
-    function updateCartBar() {
-      const bar = document.getElementById('cart-bar');
-      if (cart.length === 0) {
-        bar.classList.add('hidden');
-        return;
+    function addToCart(id) {
+      const item = menuCache.find(i => i.id === id);
+      if (!item) return;
+      const existing = cart.find(i => i.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
       }
-      bar.classList.remove('hidden');
-      const total = cart.reduce((sum, item) => sum + item.price, 0);
-      document.getElementById('cart-summary-text').innerText = `${cart.length} item(s) — $${total.toFixed(2)}`;
+      updateCartTotal();
     }
 
-    function openCheckoutModal() {
-      const list = document.getElementById('checkout-items-list');
-      let total = 0;
-      list.innerHTML = cart.map((item, index) => {
-        total += item.price;
-        return `
-          <div class="flex justify-between items-center bg-[#0a0a0a] border border-[#222] p-3 rounded text-xs">
-            <div>
-              <p class="font-bold text-[#f5f5f7]">${item.name}</p>
-              ${item.notes ? `<p class="text-[10px] text-[#c5a059] mt-0.5">Note: ${item.notes}</p>` : ''}
-            </div>
-            <div class="flex items-center space-x-3">
-              <span class="font-mono">$${item.price.toFixed(2)}</span>
-              <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300">✕</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('checkout-total').innerText = `$${total.toFixed(2)}`;
-      document.getElementById('checkout-modal').classList.remove('hidden');
+    function updateCartTotal() {
+      const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
     }
 
-    function closeCheckoutModal() {
-      document.getElementById('checkout-modal').classList.add('hidden');
-    }
+    async function placeOrder() {
+      if (cart.length === 0) return alert('Your cart is empty.');
+      const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
-    function removeFromCart(index) {
-      cart.splice(index, 1);
-      updateCartBar();
-      openCheckoutModal();
-      if (cart.length === 0) closeCheckoutModal();
-    }
-
-    async function submitOrder() {
-      const total = cart.reduce((sum, item) => sum + item.price, 0);
       const { error } = await supabaseClient.from('orders').insert([{
         table_id: tableId,
+        session_id: customerSessionId, // Binds order strictly to this browser session
         items: cart,
+        total_amount: total,
         status: 'NEW',
-        payment_status: 'UNPAID',
-        total_amount: total
+        payment_status: 'UNPAID'
       }]);
 
       if (error) {
-        alert('Error placing order: ' + error.message);
+        alert('Order failed: ' + error.message);
       } else {
-        alert('Order successfully transmitted to kitchen.');
+        alert('Order successfully placed to kitchen.');
         cart = [];
-        updateCartBar();
-        closeCheckoutModal();
+        updateCartTotal();
+        loadCustomerTracking();
       }
     }
 
-    async function openLiveTracker() {
+    function openTracker() {
       const modal = document.getElementById('tracker-modal');
-      modal.classList.remove('hidden');
-      const { data: orders } = await supabaseClient.from('orders').select('*').eq('table_id', tableId).order('created_at', { ascending: false });
-      const container = document.getElementById('tracker-orders-list');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        loadCustomerTracking();
+      }
+    }
+
+    async function loadCustomerTracking() {
+      // Query orders matching THIS specific table AND THIS specific session ID
+      const { data: orders } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .eq('table_id', tableId)
+        .eq('session_id', customerSessionId)
+        .order('created_at', { ascending: false });
+
+      const container = document.getElementById('order-tracker-list');
 
       if (!orders || orders.length === 0) {
-        container.innerHTML = `<p class="text-xs text-[#666]">No active orders found for ${tableId}.</p>`;
+        container.innerHTML = `<p class="text-xs text-[#666] text-center py-4">No active orders for your session.</p>`;
         return;
       }
 
       container.innerHTML = orders.map(o => `
         <div class="bg-[#0a0a0a] border border-[#222] p-3 rounded space-y-2 text-xs">
           <div class="flex justify-between font-mono">
-            <span class="text-[#c5a059] font-bold">Order #${o.id.slice(0,6)}</span>
-            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${o.status === 'READY' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-blue-950 text-blue-400 border border-blue-900'}">${o.status}</span>
+            <span class="text-[#c5a059] font-bold">#${o.id.slice(0,6)}</span>
+            <span class="text-emerald-400">STATUS: ${o.status}</span>
           </div>
-          <p class="text-[#bbb]">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
-          <div class="flex justify-between text-[10px] text-[#666] pt-1 border-t border-[#222]">
+          <p class="text-[#ddd]">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</p>
+          <div class="flex justify-between text-[10px] text-[#888] pt-1 border-t border-[#222]">
             <span>Payment: ${o.payment_status}</span>
-            <span class="font-mono font-bold text-[#f5f5f7]">$${o.total_amount.toFixed(2)}</span>
+            <span class="font-mono font-bold text-white">$${o.total_amount.toFixed(2)}</span>
           </div>
         </div>
       `).join('');
-    }
-
-    function closeLiveTracker() {
-      document.getElementById('tracker-modal').classList.add('hidden');
     }
 
     loadMenu();
